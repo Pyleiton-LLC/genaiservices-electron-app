@@ -14,6 +14,17 @@ window.addEventListener('DOMContentLoaded', () => {
     // Set the initial URLs when the DOM is fully loaded
     setInitialURLs();
 
+    // Function to resize the webview elements
+    const resizeWebviews = () => {
+        webviewContainers.forEach(container => {
+            const webview = container.querySelector('webview');
+            if (webview) {
+                webview.style.height = 'calc(100% - 75px)';
+                webview.style.width = '100%';
+            }
+        });
+    };
+
     // Add click event listeners to each tab
     tabs.forEach((tab, index) => {
         tab.addEventListener('click', () => {
@@ -23,6 +34,9 @@ window.addEventListener('DOMContentLoaded', () => {
             webviewContainers.forEach((container, containerIndex) => {
                 container.style.display = containerIndex === index ? 'block' : 'none';
             });
+
+            // Resize the webview elements after switching tabs
+            resizeWebviews();
         });
     });
 
@@ -53,4 +67,7 @@ window.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Initial resize of the webview elements
+    resizeWebviews();
 });

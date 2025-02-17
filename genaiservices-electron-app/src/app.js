@@ -6,8 +6,8 @@ function createWindow() {
         width: 800,
         height: 600,
         webPreferences: {
-            preload: path.join(__dirname, 'src', 'preload.js'),
-            webviewTag: true, // Enable the use of the webview tag
+            preload: path.join(__dirname, 'preload.bundle.js'),
+            webviewTag: true, 
         },
     });
 
