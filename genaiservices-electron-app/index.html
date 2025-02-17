@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generative AI services</title>
+    <link rel="stylesheet" href="styles.min.css">
+</head>
+<body>
+    <div id="tabs">
+        <div class="tab active" data-url="https://www.chatgpt.com">ChatGPT</div>
+        <div class="tab" data-url="https://gemini.google.com">Gemini</div>
+        <div class="tab" data-url="https://www.claude.ai">Claude</div>
+    </div>
+    <div id="content">
+        <div class="webview-container" data-url="https://www.chatgpt.com">
+            <div class="controls">
+                <button class="home">Home</button>
+                <button class="backward">Backward</button>
+                <button class="forward">Forward</button>
+            </div>
+            <webview></webview>
+        </div>
+        <div class="webview-container" data-url="https://gemini.google.com" style="display: none;">
+            <div class="controls">
+                <button class="home">Home</button>
+                <button class="backward">Backward</button>
+                <button class="forward">Forward</button>
+            </div>
+            <webview></webview>
+        </div>
+        <div class="webview-container" data-url="https://www.claude.ai" style="display: none;">
+            <div class="controls">
+                <button class="home">Home</button>
+                <button class="backward">Backward</button>
+                <button class="forward">Forward</button>
+            </div>
+            <webview></webview>
+        </div>
+    </div>
+    <script src="src/index.js"></script>
+</body>
+</html>

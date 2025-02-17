@@ -1,0 +1,81 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#tabs {
+    display: flex;
+    background-color: #343a40; /* Dark background color for the tabs */
+    padding: 10px;
+}
+
+.tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    margin-right: 5px;
+    background-color: #007bff; /* Blue background color for the tabs */
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+    .tab.active {
+        background-color: #0056b3; /* Darker blue for the active tab */
+    }
+
+    .tab:hover {
+        background-color: #0056b3; /* Darker blue on hover */
+    }
+
+#content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.webview-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.controls {
+    display: flex;
+    justify-content: space-around;
+    padding: 10px;
+    background-color: #f1f1f1;
+}
+
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+    button:hover {
+        background-color: #0056b3;
+    }
+
+    button:active {
+        background-color: #004494;
+    }
+
+webview {
+    flex: 1;
+    display: flex;
+    height: 100%;
+    width: 100%;
+    border: none;
+}

@@ -1,3 +1,29 @@
+# Exclude development dependencies
+node_modules/
+
+# Exclude test and demo files
+test/
+tests/
+*.test.js
+*.spec.js
+
+# Exclude configuration files (if you don't need them in the package)
+.idea/
+.vscode/
+*.log
+
+# Exclude documentation files
+*.md
+
+# Exclude build files or temporary files
+build/
+dist/
+*.bak
+
+# Exclude source control files
+.git/
+.gitignore
+
 # Logs
 logs
 *.log
@@ -128,6 +154,3 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
-/.vs/genaiservices-electron-app
-/genaiservices-electron-app/.vscode
-/genaiservices-electron-app/obj/Debug

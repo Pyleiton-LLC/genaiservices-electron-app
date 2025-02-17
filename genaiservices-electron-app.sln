@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35806.99 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{54A90642-561A-4BB1-A94E-469ADEE60C69}") = "genaiservices-electron-app", "genaiservices-electron-app\genaiservices-electron-app.esproj", "{D24D9B5F-B945-2708-8C78-4B451D8C65C8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D24D9B5F-B945-2708-8C78-4B451D8C65C8}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {B66E1ED3-51DA-4FBC-998B-DB3021A85D3E}
+	EndGlobalSection
+EndGlobal
