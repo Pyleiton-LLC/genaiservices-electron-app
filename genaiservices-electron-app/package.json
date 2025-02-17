@@ -9,7 +9,10 @@
     "build-main": "webpack --config webpack.main.config.js",
     "build-renderer": "webpack --config webpack.renderer.config.js",
     "build-preload": "webpack --config webpack.preload.config.js",
-    "build": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && electron-builder"
+    "prune": "npm prune --production",
+    "build": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && npm prune && electron-builder",
+    "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && electron-builder --dir",
+    "build-dev": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -103,12 +106,14 @@
     "appId": "com.example.genaiservices.electron.app",
     "win": {
       "target": "nsis",
-      "icon": "pyleiton-logo.ico",
+      "icon": "pyleiton-icon.ico",
       "compression": "maximum"
     },
     "files": [
       "dist/**/*",
       "index.html",
+      "src/**/*",
+      "styles.min.css",
       "package.json"
     ],
     "extraResources": [
