@@ -131,3 +131,4 @@ dist
 /.vs/genaiservices-electron-app
 /genaiservices-electron-app/.vscode
 /genaiservices-electron-app/obj/Debug
+/.vs
