@@ -9,13 +9,13 @@
     "build-main": "webpack --config webpack.main.config.js",
     "build-renderer": "webpack --config webpack.renderer.config.js",
     "prune": "npm prune --production",
-    "build": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder",
+    "build": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder --win && electron-builder -mw",
     "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && electron-builder --dir",
     "build-dev": "npm run clean && npm run build-main && npm run build-renderer && electron-builder"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "compression-webpack-plugin": "^11.1.0",
@@ -23,6 +23,7 @@
     "css-loader": "^7.1.2",
     "css-minimizer-webpack-plugin": "^7.0.0",
     "electron": "^34.2.0",
+    "electron-build-service": "^1.0.7",
     "electron-builder": "^24.3.0",
     "eslint": "^9.20.1",
     "mini-css-extract-plugin": "^2.9.2",
@@ -114,6 +115,15 @@
       "icon": "pyleiton-icon.ico",
       "compression": "maximum",
       "executableName": "genai-services",
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "pyleiton-icon.icns",
+      "category": "public.app-category.utilities",
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "files": [
