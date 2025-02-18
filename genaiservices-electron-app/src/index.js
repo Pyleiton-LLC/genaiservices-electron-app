@@ -1,7 +1,7 @@
 window.addEventListener('DOMContentLoaded', () => {
     const tabs = document.querySelectorAll('.tab');
     const webviewContainers = document.querySelectorAll('.webview-container');
-    const viewToggle = document.getElementById('viewToggle');
+    const viewAllToggle = document.getElementById('viewAllToggle');
     const content = document.getElementById('content');
 
     // Function to set the initial URL for each webview
@@ -21,7 +21,7 @@ window.addEventListener('DOMContentLoaded', () => {
         webviewContainers.forEach(container => {
             const webview = container.querySelector('webview');
             if (webview) {
-                webview.style.height = 'calc(100% - 75px)';
+                webview.style.height = 'calc(100% - 45px)';
                 webview.style.width = '100%';
             }
         });
@@ -39,6 +39,9 @@ window.addEventListener('DOMContentLoaded', () => {
             webviewContainers.forEach((container, containerIndex) => {
                 container.style.display = containerIndex === index ? 'block' : 'none';
             });
+            
+            // De-select the "Show All" checkbox
+            viewAllToggle.checked = false;
 
             // Resize the webview elements after switching tabs
             resizeWebviews();

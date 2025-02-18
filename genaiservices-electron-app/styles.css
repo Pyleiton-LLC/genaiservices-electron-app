@@ -41,20 +41,22 @@ body {
 
 .webview-container {
     flex: 1;
-    display: none; /* Hide by default */
+    display: none; 
     flex-direction: column;
     height: calc(100vh - 50px);
     width: 100%;
 }
 
 .webview-container.active {
-    display: flex; /* Show active container */
+    display: flex; 
 }
 
     .webview-container.side-by-side {
         display: flex;
         height: 100%;
         width: 33%;
+        border: 1px solid #ccc; 
+        box-sizing: border-box; 
     }
 
 .controls {
@@ -63,7 +65,7 @@ body {
     padding: 10px;
     background-color: #f1f1f1;
     gap: 10px;
-    height: 30px;
+    height: 25px;
     align-items: center;
 }
 
