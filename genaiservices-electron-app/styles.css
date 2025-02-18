@@ -24,13 +24,13 @@ body {
     transition: background-color 0.3s ease;
 }
 
-    .tab.active {
-        background-color: #0056b3; /* Darker blue for the active tab */
-    }
+.tab.active {
+    background-color: #0056b3; /* Darker blue for the active tab */
+}
 
-    .tab:hover {
-        background-color: #0056b3; /* Darker blue on hover */
-    }
+.tab:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
 
 #content {
     flex: 1;
@@ -41,37 +41,64 @@ body {
 
 .webview-container {
     flex: 1;
-    display: flex;
+    display: none; /* Hide by default */
     flex-direction: column;
     height: calc(100vh - 50px);
     width: 100%;
 }
 
+.webview-container.active {
+    display: flex; /* Show active container */
+}
+
+    .webview-container.side-by-side {
+        display: flex;
+        height: 100%;
+        width: 33%;
+    }
+
 .controls {
     display: flex;
-    justify-content: space-around;
+    justify-content: left;
     padding: 10px;
     background-color: #f1f1f1;
+    gap: 10px;
+    height: 30px;
+    align-items: center;
 }
 
 button {
-    padding: 10px 20px;
-    font-size: 16px;
+    padding: 10px;
+    font-size: 10px;
     border: none;
-    border-radius: 5px;
+    border-radius: 2px;
     background-color: #007bff;
     color: white;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
-    button:hover {
-        background-color: #0056b3;
-    }
+button:hover {
+    background-color: #0056b3;
+}
 
-    button:active {
-        background-color: #004494;
-    }
+button:active {
+    background-color: #004494;
+}
+
+.viewall-toggle-label {
+    display: flex;
+    align-items: center;
+    margin-left: 50px;
+    color: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.viewall-toggle {
+    margin-left: 50px; 
+    margin-right: 5px;
+}
 
 webview {
     flex: 1;

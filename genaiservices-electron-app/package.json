@@ -1,18 +1,17 @@
 {
   "name": "genaiservices-electron-app",
-  "version": "0.0.1",
-  "description": "",
+  "version": "0.1.0",
+  "description": "This app allows you to display ChatGPT, Claude, and Gemini on different tabs or side by side for comparison",
   "main": "dist/app.bundle.js",
   "scripts": {
     "start": "electron .",
     "clean": "rimraf dist",
     "build-main": "webpack --config webpack.main.config.js",
     "build-renderer": "webpack --config webpack.renderer.config.js",
-    "build-preload": "webpack --config webpack.preload.config.js",
     "prune": "npm prune --production",
-    "build": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && npm prune && electron-builder",
-    "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && electron-builder --dir",
-    "build-dev": "npm run clean && npm run build-main && npm run build-renderer && npm run build-preload && electron-builder"
+    "build": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder",
+    "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && electron-builder --dir",
+    "build-dev": "npm run clean && npm run build-main && npm run build-renderer && electron-builder"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +19,7 @@
   "type": "commonjs",
   "devDependencies": {
     "compression-webpack-plugin": "^11.1.0",
+    "copy-webpack-plugin": "^12.0.2",
     "css-loader": "^7.1.2",
     "electron": "^34.2.0",
     "electron-builder": "^24.3.0",

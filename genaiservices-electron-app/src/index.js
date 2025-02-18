@@ -1,6 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
     const tabs = document.querySelectorAll('.tab');
     const webviewContainers = document.querySelectorAll('.webview-container');
+    const viewToggle = document.getElementById('viewToggle');
+    const content = document.getElementById('content');
 
     // Function to set the initial URL for each webview
     const setInitialURLs = () => {
@@ -25,6 +27,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     };
 
+    // Display the first webview container by default
+    webviewContainers[0].style.display = 'block';
+
     // Add click event listeners to each tab
     tabs.forEach((tab, index) => {
         tab.addEventListener('click', () => {
@@ -43,9 +48,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // Add event listeners to each webview container's controls
     webviewContainers.forEach(container => {
         const webview = container.querySelector('webview');
-        const homeButton = container.querySelector('.home');
-        const backwardButton = container.querySelector('.backward');
-        const forwardButton = container.querySelector('.forward');
+        const homeButton = container.querySelector('.homepage');
+        const backwardButton = container.querySelector('.backwardpage');
+        const forwardButton = container.querySelector('.forwardpage');
 
         // Add click event listener to the Home button
         homeButton.addEventListener('click', () => {
@@ -66,6 +71,33 @@ window.addEventListener('DOMContentLoaded', () => {
                 webview.goForward();
             }
         });
+    });
+
+    // Handle the view toggle checkbox
+    viewAllToggle.addEventListener('change', () => {
+        if (viewAllToggle.checked) {
+            // Show all webviews side by side
+            content.style.display = 'flex';
+            content.style.flexDirection = 'row';
+            webviewContainers.forEach(container => {
+                container.style.display = 'flex';
+                container.style.width = '33.33%';
+            });
+        } else {
+            // Revert to tabbed view
+            content.style.display = 'flex';
+            content.style.flexDirection = 'column';
+            const activeTab = document.querySelector('.tab.active');
+            const activeIndex = Array.from(tabs).indexOf(activeTab);
+
+            webviewContainers.forEach((container, index) => {
+                container.style.display = index === activeIndex ? 'block' : 'none';
+                container.style.width = '100%';
+            });
+        }
+
+        // Resize the webview elements after changing the view
+        resizeWebviews();
     });
 
     // Initial resize of the webview elements

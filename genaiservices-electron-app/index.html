@@ -4,38 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Generative AI services</title>
-    <link rel="stylesheet" href="styles.min.css">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-src 'self' https://www.chatgpt.com https://gemini.google.com https://www.claude.ai;">
+    <link rel="stylesheet" href="styles.css">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://kit.fontawesome.com; style-src 'self' 'unsafe-inline' https://kit.fontawesome.com https://ka-f.fontawesome.com; font-src 'self' https://ka-f.fontawesome.com; img-src 'self' data:; connect-src 'self' https://ka-f.fontawesome.com; frame-src 'self' https://www.chatgpt.com https://gemini.google.com https://www.claude.ai;">
+    <script src="https://kit.fontawesome.com/4ea5d5d45b.js" crossorigin="anonymous"></script>
 </head>
 <body>
     <div id="tabs">
         <div class="tab active" data-url="https://www.chatgpt.com">ChatGPT</div>
         <div class="tab" data-url="https://gemini.google.com">Gemini</div>
         <div class="tab" data-url="https://www.claude.ai">Claude</div>
+        <label class="viewall-toggle-label">
+            <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
+        </label>
     </div>
     <div id="content">
         <div class="webview-container" data-url="https://www.chatgpt.com">
             <div class="controls">
-                <button class="home">Home</button>
-                <button class="backward">Backward</button>
-                <button class="forward">Forward</button>
+                <button class="homepage"><i class="fa-solid fa-house"></i></button>
+                <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
+                <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
             </div>
             <webview></webview>
         </div>
         <div class="webview-container" data-url="https://gemini.google.com" style="display: none;">
-            <div class="controls">
-                <button class="home">Home</button>
-                <button class="backward">Backward</button>
-                <button class="forward">Forward</button>
-            </div>
+                <div class="controls">
+                    <button class="homepage"><i class="fa-solid fa-house"></i></button>
+                    <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
+                    <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
+                </div>
             <webview></webview>
         </div>
         <div class="webview-container" data-url="https://www.claude.ai" style="display: none;">
-            <div class="controls">
-                <button class="home">Home</button>
-                <button class="backward">Backward</button>
-                <button class="forward">Forward</button>
-            </div>
+                <div class="controls">
+                    <button class="homepage"><i class="fa-solid fa-house"></i></button>
+                    <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
+                    <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
+                </div>
+            
             <webview></webview>
         </div>
     </div>

@@ -1,6 +1,7 @@
 const path = require('path');
 const nodeExternals = require('webpack-node-externals');
 const TerserPlugin = require('terser-webpack-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   mode: 'production',
@@ -17,5 +18,12 @@ module.exports = {
   optimization: {
     minimize: true,
     minimizer: [new TerserPlugin()],
-  },
+    },
+    plugins: [
+        new CopyWebpackPlugin({
+            patterns: [
+                { from: 'src/preload.js', to: 'preload.js' }, // Copy preload.js to dist
+            ],
+        }),
+    ],
 };
