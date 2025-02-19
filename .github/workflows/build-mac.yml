@@ -18,15 +18,18 @@ jobs:
 
       - name: Install dependencies
         run: npm install
+        working-directory: genaiservices-electron-app
 
       - name: Build the Electron app
         run: npm run build
+        working-directory: genaiservices-electron-app
 
       - name: Package the Electron app for macOS
         run: npm run build-unpacked
+        working-directory: genaiservices-electron-app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: mac-build
-          path: dist/prod
+          path: genaiservices-electron-app/dist/prod
