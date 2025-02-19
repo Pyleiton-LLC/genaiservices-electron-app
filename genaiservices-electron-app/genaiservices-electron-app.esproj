@@ -1,5 +1,5 @@
 <Project Sdk="Microsoft.VisualStudio.JavaScript.Sdk/1.0.2191419">
   <ItemGroup>
-    <None Include=".github\build-mac.yml" />
+    <None Include=".github\workflows\build-mac.yml" />
   </ItemGroup>
 </Project>
