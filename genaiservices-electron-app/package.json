@@ -118,10 +118,7 @@
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "mac": {
-      "target": [
-        "dmg",
-        "zip"
-      ],
+      "target": "dmg",
       "icon": "pyleiton-icon.icns",
       "category": "public.app-category.utilities",
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
