@@ -21,7 +21,7 @@ jobs:
         working-directory: genaiservices-electron-app
 
       - name: Build the Electron app
-        run: npm run build
+        run: npm run build-mac
         working-directory: genaiservices-electron-app
 
       - name: Package the Electron app for macOS
