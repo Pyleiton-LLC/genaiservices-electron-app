@@ -27,5 +27,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mac-build
-          path: genaiservices-electron-app/dist/prod
+          name: mac-prod-build
+          path: genaiservices-electron-app/dist/prod/mac
