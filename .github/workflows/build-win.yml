@@ -27,5 +27,5 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: win-build
-          path: genaiservices-electron-app/dist/win/prod
+          name: win-prod-build
+          path: genaiservices-electron-app/dist/prod/win
