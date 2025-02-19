@@ -10,12 +10,17 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: electron
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-
+      
+      - name: see directory in electron_dist
+        run: 'ls ./electron'
+      
       - name: Install dependencies
         run: npm install
         working-directory: genaiservices-electron-app
