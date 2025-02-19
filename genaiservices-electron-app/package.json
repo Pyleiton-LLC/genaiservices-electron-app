@@ -117,13 +117,13 @@
       "icon": "pyleiton-icon.ico",
       "compression": "maximum",
       "executableName": "genai-services",
-      "artifactName": "win/genai-services-${version}-${os}-${arch}.${ext}"
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "mac": {
       "target": "dmg",
       "icon": "pyleiton-icon.icns",
       "category": "public.app-category.utilities",
-      "artifactName": "mac/genai-services-${version}-${os}-${arch}.${ext}"
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "files": [
       "dist/**/*",
