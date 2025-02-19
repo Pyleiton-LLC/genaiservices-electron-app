@@ -28,4 +28,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: win-prod-build
-          path: genaiservices-electron-app/dist/prod/win
+          path: genaiservices-electron-app/dist/prod
