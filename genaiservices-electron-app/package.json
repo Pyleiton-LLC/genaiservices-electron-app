@@ -9,9 +9,9 @@
     "build-main": "webpack --config webpack.main.config.js",
     "build-renderer": "webpack --config webpack.renderer.config.js",
     "prune": "npm prune --production",
-    "build": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder --win && electron-builder -mw",
-    "build-mac": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder --win && electron-builder -m",
-    "build-win": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder --win && electron-builder -w",
+    "build": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder -mw",
+    "build-mac": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder -m",
+    "build-win": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder -w",
     "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && electron-builder --dir",
     "build-dev": "npm run clean && npm run build-main && npm run build-renderer && electron-builder"
   },
