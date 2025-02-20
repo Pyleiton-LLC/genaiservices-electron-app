@@ -2,6 +2,8 @@
 
 This app allows you to display ChatGPT, Claude, and Gemini on different tabs or side by side for comparison.
 
+📢 **[Latest Release](https://github.com/pyleiton-llc/genaiservices-electron-app/releases/latest)**
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed on your system:
