@@ -150,6 +150,15 @@
       "styles.min.css",
       "package.json"
     ],
+    "extraResources": [
+    {
+      "from": "resources/",
+      "to": ".",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
     "asar": true,
     "npmRebuild": false
   }
