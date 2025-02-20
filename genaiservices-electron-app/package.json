@@ -114,7 +114,7 @@
     },
     "win": {
       "target": "nsis",
-      "icon": "pyleiton-icon.ico",
+      "icon": "resources/pyleiton-icon.ico",
       "compression": "maximum",
       "executableName": "genai-services",
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
@@ -123,10 +123,10 @@
       "target": "dmg",
       "icon": "pyleiton-icon.icns",
       "category": "public.app-category.utilities",
-      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}",
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "dmg": {
-      "icon": "pyleiton-icon.icns",
+      "icon": "resources/icon.icns",
       "iconSize": 80,
       "contents": [
         {
