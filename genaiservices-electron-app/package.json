@@ -124,6 +124,22 @@
       "icon": "pyleiton-icon.icns",
       "category": "public.app-category.utilities",
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
+      "dmg": {
+      "icon": "pyleiton-icon.icns",
+      "iconSize": 80,
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    }
     },
     "files": [
       "dist/**/*",
