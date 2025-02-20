@@ -19,7 +19,7 @@ Before you begin, ensure you have the following installed on your system:
    ```
 2. Navigate into the project directory:
    ```sh
-   cd your-repo
+   cd genaiservices-electron-app
    ```
 3. Install dependencies:
    ```sh
