@@ -142,6 +142,7 @@
       ]
     },
     "files": [
+      "resources/**/*",
       "dist/**/*",
       "index.html",
       "src/**/*",
@@ -150,14 +151,14 @@
       "package.json"
     ],
     "extraResources": [
-      {
-        "from": "resources/",
-        "to": "resources/",
-        "filter": [
-          "**/*"
-        ]
-      }
-    ],
+    {
+      "from": "resources/",
+      "to": ".",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
     "asar": true,
     "npmRebuild": false
   }
