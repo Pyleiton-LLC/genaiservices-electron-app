@@ -123,7 +123,7 @@
       "target": "dmg",
       "icon": "pyleiton-icon.icns",
       "category": "public.app-category.utilities",
-      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}",
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
     "dmg": {
       "icon": "pyleiton-icon.icns",
