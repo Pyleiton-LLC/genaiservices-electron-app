@@ -40,4 +40,4 @@ npm start
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [MIT License]([LICENSE](https://github.com/pyleiton/genaiservices-electron-app?tab=MIT-1-ov-file)).
