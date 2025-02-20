@@ -142,21 +142,13 @@
       ]
     },
     "files": [
+      "resources/**/*",
       "dist/**/*",
       "index.html",
       "src/**/*",
       "styles.css",
       "styles.min.css",
       "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "resources/",
-        "to": "resources/",
-        "filter": [
-          "**/*"
-        ]
-      }
     ],
     "asar": true,
     "npmRebuild": false
