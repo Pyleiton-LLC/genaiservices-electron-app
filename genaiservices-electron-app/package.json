@@ -121,7 +121,7 @@
     },
     "mac": {
       "target": "dmg",
-      "icon": "pyleiton-icon.icns",
+      "icon": "resources/pyleiton-icon.icns",
       "category": "public.app-category.utilities",
       "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
     },
