@@ -1,7 +1,7 @@
 {
   "name": "genaiservices-electron-app",
-  "version": "0.1.0",
-  "description": "This app allows you to display ChatGPT, Claude, and Gemini on different tabs or side by side for comparison",
+  "version": "0.2.0",
+  "description": "This app allows you to display multiple Gen AI services on different tabs or side by side for comparison",
   "main": "dist/app.bundle.js",
   "scripts": {
     "start": "electron .",
@@ -150,6 +150,7 @@
       "dist/**/*",
       "index.html",
       "src/**/*",
+      "config/**/*",
       "styles.css",
       "styles.min.css",
       "package.json"
@@ -161,9 +162,16 @@
         "filter": [
           "**/*"
         ]
+      },
+      {
+        "from": "config/pages-config.json",
+        "to": "config/pages-config.json"
       }
     ],
     "asar": true,
+    "asarUnpack": [
+      "**/config/pages-config.json"
+    ],
     "npmRebuild": false
   }
 }

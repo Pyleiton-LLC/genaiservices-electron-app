@@ -1,4 +1,54 @@
 window.addEventListener('DOMContentLoaded', () => {
+    window.electron.ipcRenderer.on('config', (event, config) => {
+        const tabsContainer = document.getElementById('tabs');
+        const contentContainer = document.getElementById('content');
+
+        // Clear existing tabs and content
+        tabsContainer.innerHTML = '';
+        contentContainer.innerHTML = '';
+
+        // Create tabs and webview containers based on config
+        config.pages.forEach((page, index) => {
+            const tab = document.createElement('div');
+            tab.className = 'tab';
+            if (index === 0) tab.classList.add('active');
+            tab.textContent = page.name;
+            tabsContainer.appendChild(tab);
+
+            const webviewContainer = document.createElement('div');
+            webviewContainer.className = 'webview-container';
+            webviewContainer.setAttribute('data-url', page.url);
+            if (index !== 0) webviewContainer.style.display = 'none';
+
+            const controls = document.createElement('div');
+            controls.className = 'controls';
+            controls.innerHTML = `
+                <button class="homepage"><i class="fa-solid fa-house"></i></button>
+                <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
+                <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
+            `;
+            webviewContainer.appendChild(controls);
+
+            const webview = document.createElement('webview');
+            webviewContainer.appendChild(webview);
+
+            contentContainer.appendChild(webviewContainer);
+        });
+
+        // Add the "Show All" toggle
+        const viewAllToggleLabel = document.createElement('label');
+        viewAllToggleLabel.className = 'viewall-toggle-label';
+        viewAllToggleLabel.innerHTML = `
+            <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
+        `;
+        tabsContainer.appendChild(viewAllToggleLabel);
+
+        // Initialize the rest of the script
+        initializeTabsAndWebviews();
+    });
+});
+
+function initializeTabsAndWebviews() {
     const tabs = document.querySelectorAll('.tab');
     const webviewContainers = document.querySelectorAll('.webview-container');
     const viewAllToggle = document.getElementById('viewAllToggle');
@@ -42,7 +92,7 @@ window.addEventListener('DOMContentLoaded', () => {
                     container.style.display = 'none';
                 }
             });
-            
+
             // De-select the "Show All" checkbox
             viewAllToggle.checked = false;
 
@@ -114,4 +164,4 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Initial resize of the webview elements
     resizeWebviews();
-});
+}

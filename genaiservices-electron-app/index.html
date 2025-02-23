@@ -9,41 +9,8 @@
     <script src="https://kit.fontawesome.com/4ea5d5d45b.js" crossorigin="anonymous"></script>
 </head>
 <body>
-    <div id="tabs">
-        <div class="tab active">ChatGPT</div>
-        <div class="tab">Gemini</div>
-        <div class="tab">Claude</div>
-        <label class="viewall-toggle-label">
-            <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
-        </label>
-    </div>
-    <div id="content">
-        <div class="webview-container" data-url="https://www.chatgpt.com">
-            <div class="controls">
-                <button class="homepage"><i class="fa-solid fa-house"></i></button>
-                <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
-                <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
-            </div>
-            <webview></webview>
-        </div>
-        <div class="webview-container" data-url="https://gemini.google.com" style="display: none;">
-                <div class="controls">
-                    <button class="homepage"><i class="fa-solid fa-house"></i></button>
-                    <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
-                    <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
-                </div>
-            <webview></webview>
-        </div>
-        <div class="webview-container" data-url="https://www.claude.ai" style="display: none;">
-                <div class="controls">
-                    <button class="homepage"><i class="fa-solid fa-house"></i></button>
-                    <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
-                    <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
-                </div>
-            
-            <webview></webview>
-        </div>
-    </div>
+    <div id="tabs"></div>
+    <div id="content"></div>
     <script src="src/index.js"></script>
 </body>
 </html>

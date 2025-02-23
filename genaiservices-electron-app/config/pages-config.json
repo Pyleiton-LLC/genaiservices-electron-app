@@ -1,0 +1,20 @@
+{
+  "pages": [
+    {
+      "name": "ChatGPT",
+      "url": "https://www.chatgpt.com"
+    },
+    {
+      "name": "Gemini",
+      "url": "https://gemini.google.com"
+    },
+    {
+      "name": "Claude",
+      "url": "https://www.claude.ai"
+    },
+    {
+      "name": "Perplexity",
+      "url": "https://www.perplexity.ai"
+    }
+  ]
+}

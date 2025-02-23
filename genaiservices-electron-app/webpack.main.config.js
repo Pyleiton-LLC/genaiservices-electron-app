@@ -22,7 +22,8 @@ module.exports = {
     plugins: [
         new CopyWebpackPlugin({
             patterns: [
-                { from: 'src/preload.js', to: 'preload.js' }, // Copy preload.js to dist
+                { from: 'src/preload.js', to: 'preload.js' }, 
+                { from: 'config/pages-config.json', to: 'config/pages-config.json' }, 
             ],
         }),
     ],
