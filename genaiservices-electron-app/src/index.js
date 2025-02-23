@@ -4,17 +4,14 @@ window.addEventListener('DOMContentLoaded', () => {
     const viewAllToggle = document.getElementById('viewAllToggle');
     const content = document.getElementById('content');
 
-    // Function to set the initial URL for each webview
-    const setInitialURLs = () => {
-        webviewContainers.forEach(container => {
-            const webview = container.querySelector('webview');
-            const url = container.getAttribute('data-url');
+    // Function to load the URL for a webview
+    const loadWebviewURL = (container) => {
+        const webview = container.querySelector('webview');
+        const url = container.getAttribute('data-url');
+        if (!webview.src) {
             webview.src = url;
-        });
+        }
     };
-
-    // Set the initial URLs when the DOM is fully loaded
-    setInitialURLs();
 
     // Function to resize the webview elements
     const resizeWebviews = () => {
@@ -27,8 +24,9 @@ window.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Display the first webview container by default
+    // Display the first webview container by default and load its URL
     webviewContainers[0].style.display = 'block';
+    loadWebviewURL(webviewContainers[0]);
 
     // Add click event listeners to each tab
     tabs.forEach((tab, index) => {
@@ -37,7 +35,12 @@ window.addEventListener('DOMContentLoaded', () => {
             tab.classList.add('active');
 
             webviewContainers.forEach((container, containerIndex) => {
-                container.style.display = containerIndex === index ? 'block' : 'none';
+                if (containerIndex === index) {
+                    container.style.display = 'block';
+                    loadWebviewURL(container);
+                } else {
+                    container.style.display = 'none';
+                }
             });
             
             // De-select the "Show All" checkbox
@@ -79,12 +82,13 @@ window.addEventListener('DOMContentLoaded', () => {
     // Handle the view toggle checkbox
     viewAllToggle.addEventListener('change', () => {
         if (viewAllToggle.checked) {
-            // Show all webviews side by side
+            // Show all webviews side by side and load their URLs
             content.style.display = 'flex';
             content.style.flexDirection = 'row';
             webviewContainers.forEach(container => {
                 container.style.display = 'flex';
                 container.style.width = '33.33%';
+                loadWebviewURL(container);
             });
         } else {
             // Revert to tabbed view
@@ -94,7 +98,12 @@ window.addEventListener('DOMContentLoaded', () => {
             const activeIndex = Array.from(tabs).indexOf(activeTab);
 
             webviewContainers.forEach((container, index) => {
-                container.style.display = index === activeIndex ? 'block' : 'none';
+                if (index === activeIndex) {
+                    container.style.display = 'block';
+                    loadWebviewURL(container);
+                } else {
+                    container.style.display = 'none';
+                }
                 container.style.width = '100%';
             });
         }
