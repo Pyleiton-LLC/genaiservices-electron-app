@@ -46,7 +46,7 @@ function createWindow() {
 app.on('ready', () => {
     // Copy the config file to the user's app data directory if it doesn't exist
     if (app.isPackaged && !fs.existsSync(userDirConfigFilePath)) {
-        fs.copyFileSync(defaultConfigFilePath, userDirconfigFilePath);
+        fs.copyFileSync(defaultConfigFilePath, userDirConfigFilePath);
     }
     createWindow();
 });
