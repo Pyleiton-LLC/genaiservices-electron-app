@@ -151,6 +151,7 @@
       "index.html",
       "src/**/*",
       "config/**/*",
+      "node_modules/**/*",
       "styles.css",
       "styles.min.css",
       "package.json"
