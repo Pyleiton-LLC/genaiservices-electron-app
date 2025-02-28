@@ -1,0 +1,31 @@
+name: Build x64 macOS Installer 
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-13
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+       
+      - name: Install dependencies
+        run: npm install
+        working-directory: genaiservices-electron-app
+
+      - name: Build the Electron app
+        run: npm run build-mac
+        working-directory: genaiservices-electron-app
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-prod-build
+          path: genaiservices-electron-app/dist/prod
