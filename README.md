@@ -1,8 +1,14 @@
 # genaiservices-electron-app
 
-This app allows you to display ChatGPT, Claude, and Gemini on different tabs or side by side for comparison.
+## Please read before using
+None of the builds are signed so your Mac or Windows machine will block the install and you'll have to override that.  Please use your gen AI service service of choice for futher instructions.
+
+This app allows you to display ChatGPT, Claude, and Gemini on different tabs or side by side for comparison.  I'm not a Node developer and was just learning about Electron so it is not polished and you will find problems.  Feel free to enter those in the [issues log](https://github.com/Pyleiton-LLC/genaiservices-electron-app/issues).
 
 📢 **[Latest Release](https://github.com/pyleiton-llc/genaiservices-electron-app/releases/latest)**
+
+😭 **[Issues Log](https://github.com/Pyleiton-LLC/genaiservices-electron-app/issues)**
+****Please enter any issues or enhancements in the issues log.  I'm sure there are plenty so don't hesitate to throw one up there.****
 
 ## Prerequisites
 
