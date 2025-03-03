@@ -165,14 +165,11 @@
         ]
       },
       {
-        "from": "config/pages-config.json",
-        "to": "config/pages-config.json"
+        "from": "config/genai-config.json",
+        "to": "config/genai-config.json"
       }
     ],
     "asar": true,
-    "asarUnpack": [
-      "**/config/pages-config.json"
-    ],
     "npmRebuild": false
   }
 }
