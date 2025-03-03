@@ -4,6 +4,8 @@ const fs = require('fs');
 
 let mainWindow;
 
+app.disableHardwareAcceleration();
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,
@@ -30,9 +32,20 @@ function createWindow() {
 app.on('ready', () => {
     createWindow();
 
+    // Path to the config file in the user's data directory
+    const userDataPath = app.getPath('userData');
+    const userConfigFilePath = path.join(userDataPath, 'genai-config.json');
+
+    // Path to the config file in the app's resources
+    const appConfigFilePath = path.join(app.getAppPath(), 'config', 'genai-config.json');
+
+    // Copy the config file to the user's data directory if it doesn't exist
+    if (!fs.existsSync(userConfigFilePath)) {
+        fs.copyFileSync(appConfigFilePath, userConfigFilePath);
+    }
+
     // Read the config file and send it to the renderer process
-    const configFilePath = path.join(__dirname, '..', 'config', 'genai-config.json');
-    fs.readFile(configFilePath, 'utf-8', (err, data) => {
+    fs.readFile(userConfigFilePath, 'utf-8', (err, data) => {
         if (err) {
             console.error('Failed to read config file:', err);
             return;
