@@ -1,12 +1,8 @@
-const { app, BrowserWindow, session } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
-const userDirConfigFilePath = path.join(app.getPath('userData'), 'pages-config.json');
-const defaultConfigFilePath = app.isPackaged
-    ? path.join(process.resourcesPath, 'config', 'pages-config.json')
-    : path.join(__dirname, '..', 'config', 'pages-config.json');
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -14,7 +10,7 @@ function createWindow() {
         height: 600,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
-            webviewTag: true, 
+            webviewTag: true,
             nodeIntegration: false,
             contextIsolation: true,
             disableBlinkFeatures: 'ServiceWorker',
@@ -26,8 +22,17 @@ function createWindow() {
     // Disable cache for the web contents
     mainWindow.webContents.session.clearCache();
 
+    mainWindow.on('closed', function () {
+        mainWindow = null;
+    });
+}
+
+app.on('ready', () => {
+    createWindow();
+
     // Read the config file and send it to the renderer process
-    fs.readFile(defaultConfigFilePath, 'utf-8', (err, data) => {
+    const configFilePath = path.join(__dirname, '..', 'config', 'genai-config.json');
+    fs.readFile(configFilePath, 'utf-8', (err, data) => {
         if (err) {
             console.error('Failed to read config file:', err);
             return;
@@ -37,18 +42,6 @@ function createWindow() {
             mainWindow.webContents.send('config', config);
         });
     });
-
-    mainWindow.on('closed', function () {
-        mainWindow = null;
-    });
-}
-
-app.on('ready', () => {
-    // Copy the config file to the user's app data directory if it doesn't exist
-    if (app.isPackaged && !fs.existsSync(userDirConfigFilePath)) {
-        fs.copyFileSync(defaultConfigFilePath, userDirConfigFilePath);
-    }
-    createWindow();
 });
 
 app.on('window-all-closed', () => {
