@@ -149,6 +149,7 @@
       "resources/**/*",
       "dist/**/*",
       "index.html",
+      "manage-ai-services.html",
       "src/**/*",
       "config/**/*",
       "node_modules/**/*",
@@ -170,6 +171,9 @@
       }
     ],
     "asar": true,
+    "asarUnpack": [
+      "**/config/genai-config.json"
+    ],
     "npmRebuild": false
   }
 }
