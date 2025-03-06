@@ -3,10 +3,30 @@ const path = require('path');
 const fs = require('fs');
 
 let mainWindow;
-const userDirConfigFilePath = path.join(app.getPath('userData'), 'pages-config.json');
-const defaultConfigFilePath = app.isPackaged
-    ? path.join(process.resourcesPath, 'config', 'pages-config.json')
-    : path.join(__dirname, '..', 'config', 'pages-config.json');
+
+ipcMain.on('navigate', (event, page) => {
+    if (mainWindow) {
+        mainWindow.loadFile(page);
+
+        // When navigating to manage page, send the config after page loads
+        if (page === 'manage-ai-services.html') {
+            mainWindow.webContents.once('did-finish-load', () => {
+                // Re-read and send the config
+                const userDataPath = app.getPath('userData');
+                const userConfigFilePath = path.join(userDataPath, 'genai-config.json');
+
+                fs.readFile(userConfigFilePath, 'utf-8', (err, data) => {
+                    if (err) {
+                        console.error('Failed to read config file for manage page:', err);
+                        return;
+                    }
+                    const config = JSON.parse(data);
+                    mainWindow.webContents.send('config', config);
+                });
+            });
+        }
+    }
+});
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -30,20 +50,35 @@ function createWindow() {
         mainWindow = null;
     });
 
+    // Allow internal navigation, only prevent external links
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+        const parsedUrl = new URL(url);
+        // Check if it's a file:// protocol or a relative path
+        if (parsedUrl.protocol === 'file:' || !parsedUrl.protocol) {
+            // This is an internal navigation - allow it
+            return;
+        }
+
+        if (!shouldStayInWebview(url)) {
+            event.preventDefault();
+            shell.openExternal(url);
+        }
+    });
+
+
     // Open external links in the default browser
     mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        const parsedUrl = new URL(url);
+        // Allow internal file:// protocols
+        if (parsedUrl.protocol === 'file:') {
+            return { action: 'allow' };
+        }
+
         if (shouldStayInWebview(url)) {
             return { action: 'allow' };
         } else {
             shell.openExternal(url);
             return { action: 'deny' };
-        }
-    })
-
-    mainWindow.webContents.on('will-navigate', (event, url) => {
-        if (!shouldStayInWebview(url) && url !== mainWindow.webContents.getURL()) {
-            event.preventDefault();
-            shell.openExternal(url);
         }
     });
 }
@@ -82,15 +117,23 @@ function shouldStayInWebview(url) {
 
 // Initial app setup
 app.on('ready', () => {
-    // Copy the config file to the user's app data directory if it doesn't exist
-    if (app.isPackaged && !fs.existsSync(userDirConfigFilePath)) {
-        fs.copyFileSync(defaultConfigFilePath, userDirConfigFilePath);
-    }
 
     createWindow();
 
+    // Path to the config file in the user's data directory
+    const userDataPath = app.getPath('userData');
+    const userConfigFilePath = path.join(userDataPath, 'genai-config.json');
+
+    // Path to the config file in the app's resources
+    const appConfigFilePath = path.join(app.getAppPath(), 'config', 'genai-config.json');
+
+    // Copy the config file to the user's data directory if it doesn't exist
+    if (!fs.existsSync(userConfigFilePath)) {
+        fs.copyFileSync(appConfigFilePath, userConfigFilePath);
+    }
+
     // Read the config file and send it to the renderer process
-    fs.readFile(defaultConfigFilePath, 'utf-8', (err, data) => {
+    fs.readFile(userConfigFilePath, 'utf-8', (err, data) => {
         if (err) {
             console.error('Failed to read config file:', err);
             return;

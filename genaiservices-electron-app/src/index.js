@@ -2,16 +2,18 @@ window.addEventListener('DOMContentLoaded', () => {
     window.electron.ipcRenderer.on('config', (event, config) => {
 
         const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);
+        
+        const filteredPages = config.pages.filter(page => selectedServices.includes(page.name));
 
         const tabsContainer = document.getElementById('tabs');
         const contentContainer = document.getElementById('content');
-
+        
         // Clear existing tabs and content
         tabsContainer.innerHTML = '';
         contentContainer.innerHTML = '';
 
         // Create tabs and webview containers based on config
-        config.pages.forEach((page, index) => {
+        filteredPages.forEach((page, index) => {
             const tab = document.createElement('div');
             tab.className = 'tab';
             if (index === 0) tab.classList.add('active');
@@ -35,6 +37,7 @@ window.addEventListener('DOMContentLoaded', () => {
             const webview = document.createElement('webview');
             webview.setAttribute('allowpopups', 'true');
             webview.setAttribute('preload', './webview-preload.js');
+
             webview.src = page.url; // Ensure the webview has a src attribute
             webviewContainer.appendChild(webview);
 
@@ -66,17 +69,18 @@ window.addEventListener('DOMContentLoaded', () => {
             });
         });
 
-        // Add the "Show All" toggle
-        const viewAllToggleLabel = document.createElement('label');
-        viewAllToggleLabel.className = 'viewall-toggle-label';
-        viewAllToggleLabel.innerHTML = `
-            <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
-        `;
-        tabsContainer.appendChild(viewAllToggleLabel);
-
         // Initialize the rest of the script
         initializeTabsAndWebviews();
     });
+
+    // In your index.js - replace your existing button handler
+    const configureButton = document.getElementById('configureButton');
+    if (configureButton) {
+        configureButton.addEventListener('click', () => {
+            // Don't use window.location.href - use loadFile in the main process instead
+            window.electron.ipcRenderer.send('navigate', 'manage-ai-services.html');
+        });
+    }
 });
 
 function initializeTabsAndWebviews() {

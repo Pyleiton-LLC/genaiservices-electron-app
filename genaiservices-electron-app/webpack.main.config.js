@@ -23,7 +23,8 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: 'src/preload.js', to: 'preload.js' }, 
-                { from: 'src/webview-preload.js', to: 'webview-preload.js' }
+                { from: 'src/webview-preload.js', to: 'webview-preload.js' },
+                { from: 'config/genai-config.json', to: 'config/genai-config.json' }
             ],
         }),
     ],

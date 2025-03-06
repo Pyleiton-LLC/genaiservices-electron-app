@@ -5,12 +5,26 @@ body {
     height: 100vh;
     display: flex;
     flex-direction: column;
+    background-color: #343a40;
+    color: white;
+}
+
+#tabs-container {
+    display: flex;
+    align-items: center;
+    background-color: #343a40; 
+    padding: 10px;
 }
 
 #tabs {
     display: flex;
-    background-color: #343a40; /* Dark background color for the tabs */
-    padding: 10px;
+    flex-grow: 0;
+}
+
+#controls {
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
 }
 
 .tab {
@@ -91,16 +105,35 @@ button:active {
 .viewall-toggle-label {
     display: flex;
     align-items: center;
-    margin-left: 50px;
+    margin-right: 10px;
     color: white;
     font-size: 14px;
     cursor: pointer;
 }
 
 .viewall-toggle {
-    margin-left: 50px; 
     margin-right: 5px;
 }
+
+#configureButton {
+    padding: 5px 10px;
+    font-size: 14px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007bff;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-left: auto;
+}
+
+    #configureButton:hover {
+        background-color: #0056b3;
+    }
+
+    #configureButton:active {
+        background-color: #004494;
+    }
 
 webview {
     flex: 1;
@@ -109,3 +142,54 @@ webview {
     width: 100%;
     border: none;
 }
+
+#manage-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #495057; /* Darker background color */
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+    #manage-container h1 {
+        text-align: center;
+        color: white; /* White text color */
+    }
+
+#ai-services-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+    #ai-services-form label {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        color: white; /* White text color */
+    }
+
+#buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+    #buttons button {
+        flex: 1;
+        margin: 0 5px;
+        padding: 10px;
+        font-size: 14px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+    }
+
+        #buttons button:hover {
+            background-color: #0056b3;
+        }
