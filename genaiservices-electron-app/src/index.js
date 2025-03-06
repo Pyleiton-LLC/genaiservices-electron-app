@@ -1,5 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
     window.electron.ipcRenderer.on('config', (event, config) => {
+
+        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);
+
         const tabsContainer = document.getElementById('tabs');
         const contentContainer = document.getElementById('content');
 
@@ -30,9 +33,37 @@ window.addEventListener('DOMContentLoaded', () => {
             webviewContainer.appendChild(controls);
 
             const webview = document.createElement('webview');
+            webview.setAttribute('allowpopups', 'true');
+            webview.setAttribute('preload', './webview-preload.js');
+            webview.src = page.url; // Ensure the webview has a src attribute
             webviewContainer.appendChild(webview);
 
+            webview.addEventListener('ipc-message', (event) => {
+                if (event.channel === 'open-external' && event.args && event.args[0]) {
+                    console.log('Opening external URL:', event.args[0]);
+                    window.electron.shell.openExternal(event.args[0])
+                        .catch(err => console.error('Failed to open URL:', err));
+                }
+            });
+
             contentContainer.appendChild(webviewContainer);
+
+            webview.addEventListener('new-window', (e) => {
+                e.preventDefault();
+
+                if (window.electron.shouldStayInWebview(e.url)) {
+                    webview.src = e.url;
+                } else {
+                    window.electron.shell.openExternal(e.url);
+                }
+            });
+
+            webview.addEventListener('will-navigate', (e) => {
+                if (!window.electron.shouldStayInWebview(e.url) && e.url !== webview.src) {
+                    e.preventDefault();
+                    window.electron.shell.openExternal(e.url);
+                }
+            });
         });
 
         // Add the "Show All" toggle

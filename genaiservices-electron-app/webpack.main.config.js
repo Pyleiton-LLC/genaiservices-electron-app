@@ -23,7 +23,7 @@ module.exports = {
         new CopyWebpackPlugin({
             patterns: [
                 { from: 'src/preload.js', to: 'preload.js' }, 
-                { from: 'config/pages-config.json', to: 'config/pages-config.json' }, 
+                { from: 'src/webview-preload.js', to: 'webview-preload.js' }
             ],
         }),
     ],
