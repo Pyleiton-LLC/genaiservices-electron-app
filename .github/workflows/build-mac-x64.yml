@@ -40,8 +40,12 @@ jobs:
           rm "${{ runner.temp }}/certificate.p12"
           
           # Print available identities for debugging
-          echo "Available identities:"
+          echo "Available identities in keychain:"
           security find-identity -v "${KEYCHAIN_PATH}"
+          
+          # Make sure the keychain is default and unlocked
+          security default-keychain -s "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
        
       - name: Install dependencies
         run: npm install
@@ -54,9 +58,17 @@ jobs:
       - name: Sign DMG
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          # Get the identity using a simpler approach
-          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep "Developer ID Application" | head -1 | awk -F '"' '{print $2}')
+          # Unlock the keychain again before signing
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # List available identities again to confirm
+          echo "Available identities before signing:"
+          security find-identity -v "${KEYCHAIN_PATH}"
+          
+          # Use the full identity string from the output
+          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep "Developer ID Application" | head -1 | awk '{print $2}')
           echo "Using identity: ${IDENTITY}"
           
           # Find the DMG file(s)
