@@ -43,9 +43,9 @@ jobs:
             exit 1
           fi
           
-          # Import certificate with verbose output
+          # Import certificate
           echo "Importing certificate..."
-          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" -v
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
           
           # Allow codesign to access the certificate without UI interaction
           echo "Setting key partition list..."
@@ -58,9 +58,9 @@ jobs:
           echo "Available identities after import:"
           security find-identity -v "${KEYCHAIN_PATH}"
           
-          # For self-signed certs, we might need to look for different text patterns
+          # Check if we have any valid identities
           IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
-          if [ "${IDENTITY_COUNT}" = "0 valid identities found" ]; then
+          if [ "${IDENTITY_COUNT}" = "0" ]; then
             echo "ERROR: No valid identities were imported. Check your certificate and password."
             exit 1
           fi
