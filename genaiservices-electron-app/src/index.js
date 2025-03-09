@@ -2,7 +2,6 @@ window.addEventListener('DOMContentLoaded', () => {
     window.electron.ipcRenderer.on('config', (event, config) => {
       
         const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);      
-        const filteredPages = config.pages.filter(page => selectedServices.includes(page.name));
         const tabsContainer = document.getElementById('tabs');
         const contentContainer = document.getElementById('content');
         
