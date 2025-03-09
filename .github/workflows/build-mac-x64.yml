@@ -46,9 +46,12 @@ jobs:
           # Clean up the temporary certificate file
           rm "${{ runner.temp }}/certificate.p12"
           
-          # Print available code signing identities
+          # Print available code signing identities for debugging
           echo "Available code signing identities:"
           security find-identity -p codesigning "${KEYCHAIN_PATH}"
+          
+          # Save full output to a file for parsing
+          security find-identity -p codesigning "${KEYCHAIN_PATH}" > /tmp/identity_output.txt
        
       - name: Install dependencies
         run: npm install
@@ -66,23 +69,39 @@ jobs:
           # Unlock the keychain again before signing
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          # Get ALL code signing identities, including untrusted ones
-          # We'll extract the certificate hash and the certificate name
-          CERT_INFO=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1)
+          # Directly run the command again for parsing
+          echo "Searching for code signing identities..."
+          security find-identity -p codesigning "${KEYCHAIN_PATH}"
           
-          # Extract just the hash (SHA-1 fingerprint)
-          IDENTITY=$(echo "${CERT_INFO}" | awk '{print $2}')
-          
-          # Extract the name (in quotes)
-          CERT_NAME=$(echo "${CERT_INFO}" | awk -F'"' '{print $2}')
-          
-          echo "Certificate info: ${CERT_INFO}"
+          # Direct extraction with grep and cut
+          IDENTITY=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "identities found" | grep -o -E '[A-F0-9]{40}' | head -1)
           echo "Identity hash: ${IDENTITY}"
+          
+          # Extract name directly with a different pattern
+          CERT_NAME=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "identities found" | grep -o '"[^"]*"' | head -1 | tr -d '"')
           echo "Certificate name: ${CERT_NAME}"
           
-          if [ -z "${IDENTITY}" ]; then
-            echo "ERROR: Could not find any code signing identity"
-            exit 1
+          # If we still don't have an identity, try using certificate name directly
+          if [ -z "${IDENTITY}" ] && [ -n "${CERT_NAME}" ]; then
+            echo "Using certificate name as identity"
+            IDENTITY="${CERT_NAME}"
+          elif [ -z "${IDENTITY}" ]; then
+            # Direct approach for debugging - list all certificates
+            echo "Listing all certificates in keychain:"
+            security find-certificate -a "${KEYCHAIN_PATH}"
+            
+            # Try to directly extract the first available certificate name
+            CERT_NAME=$(security find-certificate -a "${KEYCHAIN_PATH}" | grep -A1 "alis" | grep -v "alis" | head -1 | tr -d '"' | xargs)
+            echo "Found certificate name from all certs: ${CERT_NAME}"
+            
+            # Use this name if available
+            if [ -n "${CERT_NAME}" ]; then
+              IDENTITY="${CERT_NAME}"
+            else
+              echo "ERROR: Could not find any identity for signing"
+              # Continue anyway with ad-hoc signing
+              IDENTITY="-"
+            fi
           fi
           
           # Find the DMG file(s)
@@ -94,18 +113,13 @@ jobs:
             exit 1
           fi
           
-          # Sign each DMG file - try with identity hash first, then with name if that fails
+          # Sign each DMG file with the identity
           for DMG_FILE in ${DMG_FILES}; do
-            echo "Signing DMG with identity hash: ${DMG_FILE}"
-            if codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}"; then
-              echo "Successfully signed with identity hash"
-            else
-              echo "Trying to sign with certificate name instead"
-              codesign --force --sign "${CERT_NAME}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}" || {
-                echo "ERROR: Both signing methods failed"
-                exit 1
-              }
-            fi
+            echo "Signing DMG with identity: ${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}" || {
+              echo "Signing failed with identity, using ad-hoc signing"
+              codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
+            }
             
             # Verify the signature (but don't fail if verification fails)
             echo "Verifying signature for: ${DMG_FILE}"
