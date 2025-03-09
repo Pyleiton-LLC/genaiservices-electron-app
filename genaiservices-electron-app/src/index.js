@@ -1,16 +1,17 @@
 window.addEventListener('DOMContentLoaded', () => {
     window.electron.ipcRenderer.on('config', (event, config) => {
-
-        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);
-        
+      
+        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);      
         const filteredPages = config.pages.filter(page => selectedServices.includes(page.name));
-
         const tabsContainer = document.getElementById('tabs');
         const contentContainer = document.getElementById('content');
         
         // Clear existing tabs and content
         tabsContainer.innerHTML = '';
         contentContainer.innerHTML = '';
+
+        // Filter pages based on selected services
+        const filteredPages = config.pages.filter(page => selectedServices.includes(page.name));
 
         // Create tabs and webview containers based on config
         filteredPages.forEach((page, index) => {

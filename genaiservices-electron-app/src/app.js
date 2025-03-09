@@ -117,7 +117,6 @@ function shouldStayInWebview(url) {
 
 // Initial app setup
 app.on('ready', () => {
-
     createWindow();
 
     // Path to the config file in the user's data directory

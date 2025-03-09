@@ -55,23 +55,23 @@ body {
 
 .webview-container {
     flex: 1;
-    display: none; 
+    display: none;
     flex-direction: column;
     height: calc(100vh - 50px);
     width: 100%;
 }
 
 .webview-container.active {
-    display: flex; 
+    display: flex;
 }
 
-    .webview-container.side-by-side {
-        display: flex;
-        height: 100%;
-        width: 33%;
-        border: 1px solid #ccc; 
-        box-sizing: border-box; 
-    }
+.webview-container.side-by-side {
+    display: flex;
+    height: 100%;
+    width: 33%;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+}
 
 .controls {
     display: flex;
