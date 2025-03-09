@@ -30,14 +30,14 @@ jobs:
           security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
           
           # Decode and import certificate
-          echo "${CERTIFICATE_B64}" | base64 --decode > "${RUNNER_TEMP}/certificate.p12"
-          security import "${RUNNER_TEMP}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/certificate.p12"
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
           
           # Allow codesign to access the certificate without UI interaction
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
           # Clean up the temporary certificate file
-          rm "${RUNNER_TEMP}/certificate.p12"
+          rm "${{ runner.temp }}/certificate.p12"
           
           # Print available identities for debugging
           echo "Available identities:"
@@ -55,9 +55,25 @@ jobs:
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
         run: |
-          # Get the identity using the specific keychain
-          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -o 'Developer ID Application: [^"]*' | head -1)
+          # Get the identity using a simpler approach
+          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep "Developer ID Application" | head -1 | awk -F '"' '{print $2}')
           echo "Using identity: ${IDENTITY}"
           
           # Find the DMG file(s)
-          DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -typ
+          DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
+          
+          # Sign each DMG file
+          for DMG_FILE in ${DMG_FILES}; do
+            echo "Signing DMG: ${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}"
+            
+            # Verify the signature
+            echo "Verifying signature for: ${DMG_FILE}"
+            codesign -vvv --deep --strict "${DMG_FILE}"
+          done
+        
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-prod-build-x64
+          path: genaiservices-electron-app/dist/prod
