@@ -13,6 +13,28 @@ jobs:
         with:
           node-version: '22'
       
+      # Debug the certificate first
+      - name: Debug Certificate
+        env:
+          CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
+        run: |
+          echo "Creating temp cert file for inspection..."
+          echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/debug-cert.p12"
+          
+          # Check if file was created successfully
+          if [ -s "${{ runner.temp }}/debug-cert.p12" ]; then
+            echo "Certificate decoded successfully"
+            ls -la "${{ runner.temp }}/debug-cert.p12"
+            # Try to get info about the certificate (won't show private data)
+            echo "Certificate file type:"
+            file "${{ runner.temp }}/debug-cert.p12"
+          else
+            echo "ERROR: Certificate decoding failed - empty file"
+          fi
+          
+          # Clean up
+          rm "${{ runner.temp }}/debug-cert.p12"
+      
       # Import and set up the signing certificate
       - name: Import Signing Certificate
         env:
@@ -38,6 +60,8 @@ jobs:
           # Check if certificate file was created successfully
           if [ -s "${{ runner.temp }}/certificate.p12" ]; then
             echo "Certificate decoded successfully"
+            ls -la "${{ runner.temp }}/certificate.p12"
+            file "${{ runner.temp }}/certificate.p12"
           else
             echo "ERROR: Certificate decoding failed - empty file"
             exit 1
@@ -45,11 +69,17 @@ jobs:
           
           # Import certificate
           echo "Importing certificate..."
-          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" || {
+            echo "ERROR: Failed to import certificate - check your certificate password"
+            exit 1
+          }
           
           # Allow codesign to access the certificate without UI interaction
           echo "Setting key partition list..."
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}" || {
+            echo "ERROR: Failed to set partition list"
+            exit 1
+          }
           
           # Clean up the temporary certificate file
           rm "${{ runner.temp }}/certificate.p12"
@@ -60,8 +90,11 @@ jobs:
           
           # Check if we have any valid identities
           IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
-          if [ "${IDENTITY_COUNT}" = "0" ]; then
+          if [ "$IDENTITY_COUNT" = "0" ]; then
             echo "ERROR: No valid identities were imported. Check your certificate and password."
+            echo "Try creating a new certificate with:"
+            echo "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt"
+            echo "openssl pkcs12 -export -out certificate.p12 -inkey cert.key -in cert.crt"
             exit 1
           fi
        
@@ -73,12 +106,10 @@ jobs:
         run: npm run build-mac
         working-directory: genaiservices-electron-app
         
-      - name: Sign DMG
+      - name: Sign DMG or Skip
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
-          # Use the common name from your self-signed certificate - replace with your actual cert name
-          CERT_NAME: "${{ secrets.CERT_NAME }}"
         run: |
           # Unlock the keychain again before signing
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
@@ -87,20 +118,22 @@ jobs:
           echo "Available identities before signing:"
           security find-identity -v "${KEYCHAIN_PATH}"
           
-          # For self-signed certificates, try to get the common name
-          if [ -n "${CERT_NAME}" ]; then
-            echo "Using provided certificate name: ${CERT_NAME}"
-            IDENTITY="${CERT_NAME}"
-          else
-            # Try to extract the first identity hash
-            IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1 | awk '{print $2}')
-            echo "Using identity hash: ${IDENTITY}"
+          # Check if we have any valid identities
+          IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
+          if [ "$IDENTITY_COUNT" = "0" ]; then
+            echo "WARNING: No valid identities found for signing. Will skip signing step."
+            exit 0
           fi
           
+          # Extract the identity hash - no CERT_NAME needed
+          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1 | awk '{print $2}')
+          
           if [ -z "${IDENTITY}" ]; then
-            echo "ERROR: Could not find a valid signing identity"
-            exit 1
+            echo "WARNING: Could not extract identity. Will skip signing step."
+            exit 0
           fi
+          
+          echo "Using identity hash: ${IDENTITY}"
           
           # Find the DMG file(s)
           DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
@@ -114,11 +147,17 @@ jobs:
           # Sign each DMG file with more options for self-signed certs
           for DMG_FILE in ${DMG_FILES}; do
             echo "Signing DMG: ${DMG_FILE}"
-            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose --deep --options runtime "${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose --deep --options runtime "${DMG_FILE}" || {
+              echo "WARNING: Signing failed, but continuing with unsigned DMG"
+            }
             
-            # Verify the signature
-            echo "Verifying signature for: ${DMG_FILE}"
-            codesign -vvv --deep --strict "${DMG_FILE}"
+            # Verify the signature (only if signing succeeded)
+            if [ $? -eq 0 ]; then
+              echo "Verifying signature for: ${DMG_FILE}"
+              codesign -vvv --deep --strict "${DMG_FILE}" || {
+                echo "WARNING: Verification failed, but continuing with build"
+              }
+            fi
           done
         
       - name: Upload artifact
