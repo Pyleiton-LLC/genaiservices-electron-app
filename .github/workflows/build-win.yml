@@ -19,8 +19,8 @@ jobs:
       # Import and set up the signing certificate
       - name: Import Signing Certificate
         env:
-          CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
-          CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+          CERTIFICATE_B64: ${{ secrets.WIN_SIGNING_CERT }}
+          CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
         run: |
           echo "Decoding certificate..."
           echo "${CERTIFICATE_B64}" | base64 -d > "${{ runner.temp }}/certificate.pfx"
