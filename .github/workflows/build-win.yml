@@ -1,12 +1,11 @@
 name: Build Windows Installer
 
-on:
+on: 
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,38 +14,56 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-      
-      # Import and set up the signing certificate
-      - name: Import Signing Certificate
+       
+      - name: Install dependencies
+        run: npm install
+        working-directory: genaiservices-electron-app
+
+      - name: Decode certificate
         env:
           CERTIFICATE_B64: ${{ secrets.WIN_SIGNING_CERT }}
           CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
         run: |
           echo "Decoding certificate..."
-          echo "${CERTIFICATE_B64}" | base64 -d > "${{ runner.temp }}/certificate.pfx"
+          $certPath = Join-Path $env:RUNNER_TEMP "certificate.pfx"
           
-          echo "Importing certificate..."
-          certutil -f -p "${CERTIFICATE_PASSWORD}" -importpfx "${{ runner.temp }}/certificate.pfx"
+          # Direct method - write base64 to file first
+          $env:CERTIFICATE_B64 | Out-File -FilePath "$env:RUNNER_TEMP\cert.b64" -NoNewline -Encoding ASCII
           
-          echo "Setting up environment variables for signing..."
-          echo "CERTIFICATE_PATH=${{ runner.temp }}/certificate.pfx" >> $GITHUB_ENV
-          echo "CERTIFICATE_PASSWORD=${CERTIFICATE_PASSWORD}" >> $GITHUB_ENV
+          # Use certutil for decoding (more reliable than PowerShell's Convert)
+          certutil -decode "$env:RUNNER_TEMP\cert.b64" "$certPath"
           
-      - name: Install dependencies
-        run: npm install
-        working-directory: genaiservices-electron-app
+          # Verify the file exists
+          if (Test-Path $certPath) {
+            echo "Certificate decoded successfully to $certPath"
+            echo "CERT_PATH=$certPath" >> $env:GITHUB_ENV
+          } else {
+            echo "Failed to decode certificate"
+            exit 1
+          }
 
       - name: Build the Electron app
         run: npm run build-win
         working-directory: genaiservices-electron-app
+        env:
+          CSC_LINK: ${{ env.CERT_PATH }}
+          CSC_KEY_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
 
-      - name: Sign Executables
+      - name: Sign executables
+        env:
+          CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
         run: |
-          echo "Signing executables..."
-          for file in $(find genaiservices-electron-app/dist/prod -name "*.exe" -type f); do
-            echo "Signing $file"
-            signtool sign /f "${CERTIFICATE_PATH}" /p "${CERTIFICATE_PASSWORD}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 "$file"
-          done
+          $certPath = $env:CERT_PATH
+          $installers = Get-ChildItem -Path "genaiservices-electron-app\dist\prod" -Filter "*.exe" -Recurse
+          
+          foreach ($installer in $installers) {
+            Write-Host "Signing $($installer.FullName)"
+            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86\signtool.exe" sign /f $certPath /p $env:CERTIFICATE_PASSWORD /tr http://timestamp.sectigo.com /td sha256 /fd sha256 $installer.FullName
+            
+            # Verify signature
+            Write-Host "Verifying signature for $($installer.FullName)"
+            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86\signtool.exe" verify /pa $installer.FullName
+          }
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
