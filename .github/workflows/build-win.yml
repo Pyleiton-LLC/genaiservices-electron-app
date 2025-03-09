@@ -14,8 +14,24 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-       
+          node-version: '22'
+      
+      # Import and set up the signing certificate
+      - name: Import Signing Certificate
+        env:
+          CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+        run: |
+          echo "Decoding certificate..."
+          echo "${CERTIFICATE_B64}" | base64 -d > "${{ runner.temp }}/certificate.pfx"
+          
+          echo "Importing certificate..."
+          certutil -f -p "${CERTIFICATE_PASSWORD}" -importpfx "${{ runner.temp }}/certificate.pfx"
+          
+          echo "Setting up environment variables for signing..."
+          echo "CERTIFICATE_PATH=${{ runner.temp }}/certificate.pfx" >> $GITHUB_ENV
+          echo "CERTIFICATE_PASSWORD=${CERTIFICATE_PASSWORD}" >> $GITHUB_ENV
+          
       - name: Install dependencies
         run: npm install
         working-directory: genaiservices-electron-app
@@ -23,6 +39,14 @@ jobs:
       - name: Build the Electron app
         run: npm run build-win
         working-directory: genaiservices-electron-app
+
+      - name: Sign Executables
+        run: |
+          echo "Signing executables..."
+          for file in $(find genaiservices-electron-app/dist/prod -name "*.exe" -type f); do
+            echo "Signing $file"
+            signtool sign /f "${CERTIFICATE_PATH}" /p "${CERTIFICATE_PASSWORD}" /tr http://timestamp.digicert.com /td sha256 /fd sha256 "$file"
+          done
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
