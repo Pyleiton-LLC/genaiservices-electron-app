@@ -13,53 +13,50 @@ jobs:
         with:
           node-version: '22'
       
-      # Debug the certificate first
-      - name: Debug Certificate Import
+      # Import and set up the signing certificate
+      - name: Import Signing Certificate
         env:
           CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          # Create and set up keychain
+          echo "Setting up keychain..."
+          # Create the keychain
           security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # Add keychain to search list and make it default
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
           security default-keychain -s "${KEYCHAIN_PATH}"
           
-          # Add keychain to search list
-          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
-          
-          # Decode certificate
+          # Create certificate file
+          echo "Decoding certificate..."
           echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/certificate.p12"
           
-          echo "Certificate file details:"
-          ls -la "${{ runner.temp }}/certificate.p12"
-          file "${{ runner.temp }}/certificate.p12"
+          # Check if certificate file was created successfully
+          if [ -s "${{ runner.temp }}/certificate.p12" ]; then
+            echo "Certificate decoded successfully"
+          else
+            echo "ERROR: Certificate decoding failed - empty file"
+            exit 1
+          fi
           
           # Import certificate
           echo "Importing certificate..."
           security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
           
           # Allow codesign to access the certificate without UI interaction
+          echo "Setting key partition list..."
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          echo "Certificate imported. Checking all types of certificates in keychain:"
+          # Clean up the temporary certificate file
+          rm "${{ runner.temp }}/certificate.p12"
           
-          # Check all certificates in the keychain - this might show the Subject and Key Usage
-          security find-certificate -a "${KEYCHAIN_PATH}" | grep -A 5 "alis"
-          
-          # Try to dump all certificates for inspection
-          echo "Trying to dump certificate details with openssl:"
-          security find-certificate -a -p "${KEYCHAIN_PATH}" | openssl x509 -text -noout || echo "Failed to parse certificate with OpenSSL"
-          
-          # Check explicitly for code signing identities
-          echo "Checking for code signing certificates:"
+          # Print available code signing identities
+          echo "Available code signing identities:"
           security find-identity -p codesigning "${KEYCHAIN_PATH}"
-          
-          # Check all identities 
-          echo "All identities in keychain:"
-          security find-identity -v "${KEYCHAIN_PATH}"
        
       - name: Install dependencies
         run: npm install
@@ -69,39 +66,42 @@ jobs:
         run: npm run build-mac
         working-directory: genaiservices-electron-app
         
-      - name: Sign DMG with Direct Certificate Reference
+      - name: Sign DMG
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          # Unlock keychain
+          # Unlock the keychain again before signing
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          # Try to get any certificate common name from the keychain
-          CERT_NAME=$(security find-certificate -a "${KEYCHAIN_PATH}" | grep -A1 "alis" | grep -v "alis" | head -1 | sed 's/^[ ]*"//g' | sed 's/"[ ]*$//g')
+          # Get the identity for code signing
+          IDENTITY=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1 | awk '{print $2}')
           
-          echo "Found certificate name: ${CERT_NAME}"
+          if [ -z "${IDENTITY}" ]; then
+            echo "ERROR: Could not find a valid code signing identity"
+            exit 1
+          fi
+          
+          echo "Using identity: ${IDENTITY}"
           
           # Find the DMG file(s)
           DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
           
-          # Try signing with the certificate name directly
-          if [ -n "${CERT_NAME}" ]; then
-            for DMG_FILE in ${DMG_FILES}; do
-              echo "Signing DMG with certificate name: ${DMG_FILE}"
-              codesign --force --sign "${CERT_NAME}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}" || {
-                echo "Signing failed with cert name, trying ad-hoc signing instead"
-                codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
-              }
-            done
-          else
-            # Fall back to ad-hoc signing
-            echo "No certificate name found, using ad-hoc signing"
-            for DMG_FILE in ${DMG_FILES}; do
-              echo "Ad-hoc signing DMG: ${DMG_FILE}"
-              codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
-            done
+          # Make sure DMG files exist
+          if [ -z "${DMG_FILES}" ]; then
+            echo "ERROR: No DMG files found to sign"
+            exit 1
           fi
+          
+          # Sign each DMG file 
+          for DMG_FILE in ${DMG_FILES}; do
+            echo "Signing DMG: ${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}"
+            
+            # Verify the signature
+            echo "Verifying signature for: ${DMG_FILE}"
+            codesign -vvv --deep --strict "${DMG_FILE}"
+          done
         
       - name: Upload artifact
         uses: actions/upload-artifact@v4
