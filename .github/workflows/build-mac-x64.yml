@@ -21,31 +21,49 @@ jobs:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
+          echo "Setting up keychain..."
           # Create the keychain
           security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          # Add keychain to search list
+          # Add keychain to search list and make it default
           security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
+          security default-keychain -s "${KEYCHAIN_PATH}"
           
-          # Decode and import certificate
+          # Create certificate file
+          echo "Decoding certificate..."
           echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/certificate.p12"
-          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          
+          # Check if certificate file was created successfully
+          if [ -s "${{ runner.temp }}/certificate.p12" ]; then
+            echo "Certificate decoded successfully"
+          else
+            echo "ERROR: Certificate decoding failed - empty file"
+            exit 1
+          fi
+          
+          # Import certificate with verbose output
+          echo "Importing certificate..."
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" -v
           
           # Allow codesign to access the certificate without UI interaction
+          echo "Setting key partition list..."
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
           # Clean up the temporary certificate file
           rm "${{ runner.temp }}/certificate.p12"
           
           # Print available identities for debugging
-          echo "Available identities in keychain:"
+          echo "Available identities after import:"
           security find-identity -v "${KEYCHAIN_PATH}"
           
-          # Make sure the keychain is default and unlocked
-          security default-keychain -s "${KEYCHAIN_PATH}"
-          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          # For self-signed certs, we might need to look for different text patterns
+          IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
+          if [ "${IDENTITY_COUNT}" = "0 valid identities found" ]; then
+            echo "ERROR: No valid identities were imported. Check your certificate and password."
+            exit 1
+          fi
        
       - name: Install dependencies
         run: npm install
@@ -59,6 +77,8 @@ jobs:
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
+          # Use the common name from your self-signed certificate - replace with your actual cert name
+          CERT_NAME: "${{ secrets.CERT_NAME }}"
         run: |
           # Unlock the keychain again before signing
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
@@ -67,17 +87,34 @@ jobs:
           echo "Available identities before signing:"
           security find-identity -v "${KEYCHAIN_PATH}"
           
-          # Use the full identity string from the output
-          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep "Developer ID Application" | head -1 | awk '{print $2}')
-          echo "Using identity: ${IDENTITY}"
+          # For self-signed certificates, try to get the common name
+          if [ -n "${CERT_NAME}" ]; then
+            echo "Using provided certificate name: ${CERT_NAME}"
+            IDENTITY="${CERT_NAME}"
+          else
+            # Try to extract the first identity hash
+            IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1 | awk '{print $2}')
+            echo "Using identity hash: ${IDENTITY}"
+          fi
+          
+          if [ -z "${IDENTITY}" ]; then
+            echo "ERROR: Could not find a valid signing identity"
+            exit 1
+          fi
           
           # Find the DMG file(s)
           DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
           
-          # Sign each DMG file
+          # Make sure DMG files exist
+          if [ -z "${DMG_FILES}" ]; then
+            echo "ERROR: No DMG files found to sign"
+            exit 1
+          fi
+          
+          # Sign each DMG file with more options for self-signed certs
           for DMG_FILE in ${DMG_FILES}; do
             echo "Signing DMG: ${DMG_FILE}"
-            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose --deep --options runtime "${DMG_FILE}"
             
             # Verify the signature
             echo "Verifying signature for: ${DMG_FILE}"
