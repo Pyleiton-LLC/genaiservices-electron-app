@@ -18,17 +18,46 @@ jobs:
         env:
           CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
-          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+          KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
           # Create the keychain
-          security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
-          security unlock-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
           # Add keychain to search list
-          security list-keychains -d user -s $KEYCHAIN_PATH $(security list-keychains -d user | sed s/\"//g)
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
           
           # Decode and import certificate
-          echo $CERTIFICATE_B64 | base64 --decode > $RUNNER_TEMP/certificate.p12
-          security import $RUNNER_TEMP/certificate.p12 -P "$CERTIF
+          echo "${CERTIFICATE_B64}" | base64 --decode > "${RUNNER_TEMP}/certificate.p12"
+          security import "${RUNNER_TEMP}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          
+          # Allow codesign to access the certificate without UI interaction
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # Clean up the temporary certificate file
+          rm "${RUNNER_TEMP}/certificate.p12"
+          
+          # Print available identities for debugging
+          echo "Available identities:"
+          security find-identity -v "${KEYCHAIN_PATH}"
+       
+      - name: Install dependencies
+        run: npm install
+        working-directory: genaiservices-electron-app
+        
+      - name: Build the Electron app
+        run: npm run build-mac
+        working-directory: genaiservices-electron-app
+        
+      - name: Sign DMG
+        env:
+          KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
+        run: |
+          # Get the identity using the specific keychain
+          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -o 'Developer ID Application: [^"]*' | head -1)
+          echo "Using identity: ${IDENTITY}"
+          
+          # Find the DMG file(s)
+          DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -typ
