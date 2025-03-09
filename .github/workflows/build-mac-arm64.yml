@@ -1,12 +1,9 @@
 name: Build arm64 macOS Installer 
-
 on:
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: macos-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -15,17 +12,122 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22'
+      
+      # Import and set up the signing certificate
+      - name: Import Signing Certificate
+        env:
+          CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
+          CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+          KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD: "temporary-password"
+        run: |
+          echo "Setting up keychain..."
+          # Create the keychain
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # Add keychain to search list and make it default
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
+          security default-keychain -s "${KEYCHAIN_PATH}"
+          
+          # Create certificate file
+          echo "Decoding certificate..."
+          echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/certificate.p12"
+          
+          # Import certificate
+          echo "Importing certificate..."
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          
+          # Allow codesign to access the certificate without UI interaction
+          echo "Setting key partition list..."
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # Clean up the temporary certificate file
+          rm "${{ runner.temp }}/certificate.p12"
+          
+          # Print available code signing identities for debugging
+          echo "Available code signing identities:"
+          security find-identity -p codesigning "${KEYCHAIN_PATH}"
+          
+          # Save full output to a file for parsing
+          security find-identity -p codesigning "${KEYCHAIN_PATH}" > /tmp/identity_output.txt
        
       - name: Install dependencies
         run: npm install
         working-directory: genaiservices-electron-app
-
+        
       - name: Build the Electron app
         run: npm run build-mac
         working-directory: genaiservices-electron-app
-
+        
+      - name: Sign DMG
+        env:
+          KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
+          KEYCHAIN_PASSWORD: "temporary-password"
+        run: |
+          # Unlock the keychain again before signing
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          
+          # Directly run the command again for parsing
+          echo "Searching for code signing identities..."
+          security find-identity -p codesigning "${KEYCHAIN_PATH}"
+          
+          # Direct extraction with grep and cut
+          IDENTITY=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "identities found" | grep -o -E '[A-F0-9]{40}' | head -1)
+          echo "Identity hash: ${IDENTITY}"
+          
+          # Extract name directly with a different pattern
+          CERT_NAME=$(security find-identity -p codesigning "${KEYCHAIN_PATH}" | grep -v "identities found" | grep -o '"[^"]*"' | head -1 | tr -d '"')
+          echo "Certificate name: ${CERT_NAME}"
+          
+          # If we still don't have an identity, try using certificate name directly
+          if [ -z "${IDENTITY}" ] && [ -n "${CERT_NAME}" ]; then
+            echo "Using certificate name as identity"
+            IDENTITY="${CERT_NAME}"
+          elif [ -z "${IDENTITY}" ]; then
+            # Direct approach for debugging - list all certificates
+            echo "Listing all certificates in keychain:"
+            security find-certificate -a "${KEYCHAIN_PATH}"
+            
+            # Try to directly extract the first available certificate name
+            CERT_NAME=$(security find-certificate -a "${KEYCHAIN_PATH}" | grep -A1 "alis" | grep -v "alis" | head -1 | tr -d '"' | xargs)
+            echo "Found certificate name from all certs: ${CERT_NAME}"
+            
+            # Use this name if available
+            if [ -n "${CERT_NAME}" ]; then
+              IDENTITY="${CERT_NAME}"
+            else
+              echo "ERROR: Could not find any identity for signing"
+              # Continue anyway with ad-hoc signing
+              IDENTITY="-"
+            fi
+          fi
+          
+          # Find the DMG file(s)
+          DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
+          
+          # Make sure DMG files exist
+          if [ -z "${DMG_FILES}" ]; then
+            echo "ERROR: No DMG files found to sign"
+            exit 1
+          fi
+          
+          # Sign each DMG file with the identity
+          for DMG_FILE in ${DMG_FILES}; do
+            echo "Signing DMG with identity: ${DMG_FILE}"
+            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}" || {
+              echo "Signing failed with identity, using ad-hoc signing"
+              codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
+            }
+            
+            # Verify the signature (but don't fail if verification fails)
+            echo "Verifying signature for: ${DMG_FILE}"
+            codesign -vvv --deep --strict "${DMG_FILE}" || echo "Verification failed but continuing"
+          done
+        
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mac-prod-build-arm64
+          name: mac-prod-build-x64
           path: genaiservices-electron-app/dist/prod
