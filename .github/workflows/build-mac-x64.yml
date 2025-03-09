@@ -14,89 +14,52 @@ jobs:
           node-version: '22'
       
       # Debug the certificate first
-      - name: Debug Certificate
-        env:
-          CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
-        run: |
-          echo "Creating temp cert file for inspection..."
-          echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/debug-cert.p12"
-          
-          # Check if file was created successfully
-          if [ -s "${{ runner.temp }}/debug-cert.p12" ]; then
-            echo "Certificate decoded successfully"
-            ls -la "${{ runner.temp }}/debug-cert.p12"
-            # Try to get info about the certificate (won't show private data)
-            echo "Certificate file type:"
-            file "${{ runner.temp }}/debug-cert.p12"
-          else
-            echo "ERROR: Certificate decoding failed - empty file"
-          fi
-          
-          # Clean up
-          rm "${{ runner.temp }}/debug-cert.p12"
-      
-      # Import and set up the signing certificate
-      - name: Import Signing Certificate
+      - name: Debug Certificate Import
         env:
           CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          echo "Setting up keychain..."
-          # Create the keychain
+          # Create and set up keychain
           security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
-          
-          # Add keychain to search list and make it default
-          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
           security default-keychain -s "${KEYCHAIN_PATH}"
           
-          # Create certificate file
-          echo "Decoding certificate..."
+          # Add keychain to search list
+          security list-keychains -d user -s "${KEYCHAIN_PATH}" $(security list-keychains -d user | sed s/\"//g)
+          
+          # Decode certificate
           echo "${CERTIFICATE_B64}" | base64 --decode > "${{ runner.temp }}/certificate.p12"
           
-          # Check if certificate file was created successfully
-          if [ -s "${{ runner.temp }}/certificate.p12" ]; then
-            echo "Certificate decoded successfully"
-            ls -la "${{ runner.temp }}/certificate.p12"
-            file "${{ runner.temp }}/certificate.p12"
-          else
-            echo "ERROR: Certificate decoding failed - empty file"
-            exit 1
-          fi
+          echo "Certificate file details:"
+          ls -la "${{ runner.temp }}/certificate.p12"
+          file "${{ runner.temp }}/certificate.p12"
           
           # Import certificate
           echo "Importing certificate..."
-          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" || {
-            echo "ERROR: Failed to import certificate - check your certificate password"
-            exit 1
-          }
+          security import "${{ runner.temp }}/certificate.p12" -P "${CERTIFICATE_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
           
           # Allow codesign to access the certificate without UI interaction
-          echo "Setting key partition list..."
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}" || {
-            echo "ERROR: Failed to set partition list"
-            exit 1
-          }
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          # Clean up the temporary certificate file
-          rm "${{ runner.temp }}/certificate.p12"
+          echo "Certificate imported. Checking all types of certificates in keychain:"
           
-          # Print available identities for debugging
-          echo "Available identities after import:"
+          # Check all certificates in the keychain - this might show the Subject and Key Usage
+          security find-certificate -a "${KEYCHAIN_PATH}" | grep -A 5 "alis"
+          
+          # Try to dump all certificates for inspection
+          echo "Trying to dump certificate details with openssl:"
+          security find-certificate -a -p "${KEYCHAIN_PATH}" | openssl x509 -text -noout || echo "Failed to parse certificate with OpenSSL"
+          
+          # Check explicitly for code signing identities
+          echo "Checking for code signing certificates:"
+          security find-identity -p codesigning "${KEYCHAIN_PATH}"
+          
+          # Check all identities 
+          echo "All identities in keychain:"
           security find-identity -v "${KEYCHAIN_PATH}"
-          
-          # Check if we have any valid identities
-          IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
-          if [ "$IDENTITY_COUNT" = "0" ]; then
-            echo "ERROR: No valid identities were imported. Check your certificate and password."
-            echo "Try creating a new certificate with:"
-            echo "openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout cert.key -out cert.crt"
-            echo "openssl pkcs12 -export -out certificate.p12 -inkey cert.key -in cert.crt"
-            exit 1
-          fi
        
       - name: Install dependencies
         run: npm install
@@ -106,59 +69,39 @@ jobs:
         run: npm run build-mac
         working-directory: genaiservices-electron-app
         
-      - name: Sign DMG or Skip
+      - name: Sign DMG with Direct Certificate Reference
         env:
           KEYCHAIN_PATH: "${{ runner.temp }}/app-signing.keychain-db"
           KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          # Unlock the keychain again before signing
+          # Unlock keychain
           security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
           
-          # List available identities again to confirm
-          echo "Available identities before signing:"
-          security find-identity -v "${KEYCHAIN_PATH}"
+          # Try to get any certificate common name from the keychain
+          CERT_NAME=$(security find-certificate -a "${KEYCHAIN_PATH}" | grep -A1 "alis" | grep -v "alis" | head -1 | sed 's/^[ ]*"//g' | sed 's/"[ ]*$//g')
           
-          # Check if we have any valid identities
-          IDENTITY_COUNT=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -c "valid identities found")
-          if [ "$IDENTITY_COUNT" = "0" ]; then
-            echo "WARNING: No valid identities found for signing. Will skip signing step."
-            exit 0
-          fi
-          
-          # Extract the identity hash - no CERT_NAME needed
-          IDENTITY=$(security find-identity -v "${KEYCHAIN_PATH}" | grep -v "valid identities found" | head -1 | awk '{print $2}')
-          
-          if [ -z "${IDENTITY}" ]; then
-            echo "WARNING: Could not extract identity. Will skip signing step."
-            exit 0
-          fi
-          
-          echo "Using identity hash: ${IDENTITY}"
+          echo "Found certificate name: ${CERT_NAME}"
           
           # Find the DMG file(s)
           DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
           
-          # Make sure DMG files exist
-          if [ -z "${DMG_FILES}" ]; then
-            echo "ERROR: No DMG files found to sign"
-            exit 1
-          fi
-          
-          # Sign each DMG file with more options for self-signed certs
-          for DMG_FILE in ${DMG_FILES}; do
-            echo "Signing DMG: ${DMG_FILE}"
-            codesign --force --sign "${IDENTITY}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose --deep --options runtime "${DMG_FILE}" || {
-              echo "WARNING: Signing failed, but continuing with unsigned DMG"
-            }
-            
-            # Verify the signature (only if signing succeeded)
-            if [ $? -eq 0 ]; then
-              echo "Verifying signature for: ${DMG_FILE}"
-              codesign -vvv --deep --strict "${DMG_FILE}" || {
-                echo "WARNING: Verification failed, but continuing with build"
+          # Try signing with the certificate name directly
+          if [ -n "${CERT_NAME}" ]; then
+            for DMG_FILE in ${DMG_FILES}; do
+              echo "Signing DMG with certificate name: ${DMG_FILE}"
+              codesign --force --sign "${CERT_NAME}" --keychain "${KEYCHAIN_PATH}" --timestamp --verbose "${DMG_FILE}" || {
+                echo "Signing failed with cert name, trying ad-hoc signing instead"
+                codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
               }
-            fi
-          done
+            done
+          else
+            # Fall back to ad-hoc signing
+            echo "No certificate name found, using ad-hoc signing"
+            for DMG_FILE in ${DMG_FILES}; do
+              echo "Ad-hoc signing DMG: ${DMG_FILE}"
+              codesign --force --sign "-" --timestamp --verbose "${DMG_FILE}"
+            done
+          fi
         
       - name: Upload artifact
         uses: actions/upload-artifact@v4
