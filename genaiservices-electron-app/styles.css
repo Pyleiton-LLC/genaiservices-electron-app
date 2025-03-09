@@ -6,13 +6,13 @@ body {
     display: flex;
     flex-direction: column;
     background-color: #343a40;
-    color: white; 
+    color: white;
 }
 
 #tabs-container {
     display: flex;
     align-items: center;
-    background-color: #343a40; /* Dark background color for the tabs container */
+    background-color: #343a40; 
     padding: 10px;
 }
 
@@ -127,13 +127,13 @@ button:active {
     margin-left: auto;
 }
 
-#configureButton:hover {
-    background-color: #0056b3;
-}
+    #configureButton:hover {
+        background-color: #0056b3;
+    }
 
-#configureButton:active {
-    background-color: #004494;
-}
+    #configureButton:active {
+        background-color: #004494;
+    }
 
 webview {
     flex: 1;
@@ -143,7 +143,6 @@ webview {
     border: none;
 }
 
-/* Styles for manage-ai-services.html */
 #manage-container {
     max-width: 600px;
     margin: 50px auto;
