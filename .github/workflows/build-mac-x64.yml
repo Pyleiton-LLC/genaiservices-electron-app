@@ -18,11 +18,9 @@ jobs:
         env:
           CERTIFICATE_B64: ${{ secrets.SIGNING_CERT }}
           CERTIFICATE_PASSWORD: ${{ secrets.CERT_PASSWORD }}
+          KEYCHAIN_PATH: ${{ runner.temp }}/app-signing.keychain-db
+          KEYCHAIN_PASSWORD: "temporary-password"
         run: |
-          # Create a temporary keychain
-          KEYCHAIN_PATH=$RUNNER_TEMP/app-signing.keychain-db
-          KEYCHAIN_PASSWORD="temporary-password"
-          
           # Create the keychain
           security create-keychain -p "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
           security set-keychain-settings -lut 21600 $KEYCHAIN_PATH
@@ -33,43 +31,4 @@ jobs:
           
           # Decode and import certificate
           echo $CERTIFICATE_B64 | base64 --decode > $RUNNER_TEMP/certificate.p12
-          security import $RUNNER_TEMP/certificate.p12 -P "$CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k $KEYCHAIN_PATH
-          
-          # Allow codesign to access the certificate without UI interaction
-          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" $KEYCHAIN_PATH
-          
-          # Clean up the temporary certificate file
-          rm $RUNNER_TEMP/certificate.p12
-       
-      - name: Install dependencies
-        run: npm install
-        working-directory: genaiservices-electron-app
-        
-      - name: Build the Electron app
-        run: npm run build-mac
-        working-directory: genaiservices-electron-app
-        
-      - name: Sign DMG
-        run: |
-          # Get the identity (use the actual identity from your certificate)
-          IDENTITY=$(security find-identity -v | grep -o '"[^"]*"' | head -1 | tr -d '"')
-          echo "Using identity: $IDENTITY"
-          
-          # Find the DMG file(s)
-          DMG_FILES=$(find genaiservices-electron-app/dist/prod -name "*.dmg" -type f)
-          
-          # Sign each DMG file
-          for DMG_FILE in $DMG_FILES; do
-            echo "Signing DMG: $DMG_FILE"
-            codesign --force --sign "$IDENTITY" --timestamp --verbose "$DMG_FILE"
-            
-            # Verify the signature
-            echo "Verifying signature for: $DMG_FILE"
-            codesign -vvv --deep --strict "$DMG_FILE"
-          done
-        
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-prod-build-x64
-          path: genaiservices-electron-app/dist/prod
+          security import $RUNNER_TEMP/certificate.p12 -P "$CERTIF
