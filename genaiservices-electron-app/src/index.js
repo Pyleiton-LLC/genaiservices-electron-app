@@ -1,19 +1,43 @@
 window.addEventListener('DOMContentLoaded', () => {
     window.electron.ipcRenderer.on('config', (event, config) => {
-      
-        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);      
+
+        // Get selected services
+        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);
+
+        // Get custom tab order or create default
+        let tabOrder = JSON.parse(localStorage.getItem('tabOrder')) || selectedServices;
+
+        // Filter tabOrder to only include currently selected services
+        tabOrder = tabOrder.filter(tabName => selectedServices.includes(tabName));
+
+        // Add any new selected services that aren't in the order yet
+        selectedServices.forEach(service => {
+            if (!tabOrder.includes(service)) {
+                tabOrder.push(service);
+            }
+        });
+
+        // Save updated tab order
+        localStorage.setItem('tabOrder', JSON.stringify(tabOrder));
+
         const tabsContainer = document.getElementById('tabs');
         const contentContainer = document.getElementById('content');
-        
+
         // Clear existing tabs and content
         tabsContainer.innerHTML = '';
         contentContainer.innerHTML = '';
 
-        // Filter pages based on selected services
-        const filteredPages = config.pages.filter(page => selectedServices.includes(page.name));
+        // Create tabs and webview containers based on ordered tabs
+        const orderedPages = [];
+        tabOrder.forEach(tabName => {
+            const page = config.pages.find(p => p.name === tabName);
+            if (page) {
+                orderedPages.push(page);
+            }
+        });
 
         // Create tabs and webview containers based on config
-        filteredPages.forEach((page, index) => {
+        orderedPages.forEach((page, index) => {
             const tab = document.createElement('div');
             tab.className = 'tab';
             if (index === 0) tab.classList.add('active');
@@ -71,17 +95,295 @@ window.addEventListener('DOMContentLoaded', () => {
 
         // Initialize the rest of the script
         initializeTabsAndWebviews();
+
+        // Only initialize reordering after everything else is done
+        setTimeout(() => {
+            initializeTabReordering();
+        }, 500);
     });
 
-    // In your index.js - replace your existing button handler
-    const configureButton = document.getElementById('configureButton');
-    if (configureButton) {
-        configureButton.addEventListener('click', () => {
-            // Don't use window.location.href - use loadFile in the main process instead
-            window.electron.ipcRenderer.send('navigate', 'manage-ai-services.html');
-        });
-    }
+    // Add reorderTabsButton event listener only after DOM is fully loaded
+    window.addEventListener('load', () => {
+        const configureButton = document.getElementById('configureButton');
+        if (configureButton) {
+            configureButton.addEventListener('click', () => {
+                window.electron.ipcRenderer.send('navigate', 'manage-ai-services.html');
+            });
+        }
+    });
 });
+
+// Function to apply tab order without reload
+function applyTabOrder(newOrder) {
+    const tabsContainer = document.getElementById('tabs');
+    const contentContainer = document.getElementById('content');
+
+    // Get the currently active tab
+    const activeTab = tabsContainer.querySelector('.tab.active');
+    const activeTabName = activeTab ? activeTab.textContent : null;
+
+    // Get all tabs and webview containers
+    const tabs = Array.from(tabsContainer.querySelectorAll('.tab'));
+    const webviewContainers = Array.from(contentContainer.querySelectorAll('.webview-container'));
+
+    // Create a map of tab names to webview containers
+    const containerMap = new Map();
+    tabs.forEach((tab, index) => {
+        containerMap.set(tab.textContent, webviewContainers[index]);
+    });
+
+    // First, hide all containers
+    webviewContainers.forEach(container => {
+        container.style.display = 'none';
+    });
+
+    // Clear the current tabs
+    tabsContainer.innerHTML = '';
+    // Clear the content container but keep references to webviews
+    contentContainer.innerHTML = '';
+
+    // Reorder tabs and webview containers according to new order
+    newOrder.forEach((name, index) => {
+        // Recreate the tab with the same properties
+        const tab = document.createElement('div');
+        tab.className = 'tab';
+        if (name === activeTabName) {
+            tab.classList.add('active');
+        }
+        tab.textContent = name;
+        tabsContainer.appendChild(tab);
+
+        // Get the corresponding container and append it in the new order
+        const container = containerMap.get(name);
+        if (container) {
+            // Only show the active container
+            container.style.display = name === activeTabName ? 'block' : 'none';
+            contentContainer.appendChild(container);
+        }
+    });
+
+    // Force display update for containers
+    requestAnimationFrame(() => {
+        webviewContainers.forEach(container => {
+            const shouldBeVisible = container.parentElement &&
+                containerMap.get(activeTabName) === container;
+            container.style.display = shouldBeVisible ? 'block' : 'none';
+        });
+    });
+
+    // Reinitialize the tabs with event listeners
+    initializeTabsAndWebviews();
+}
+
+// New function to handle tab reordering
+function initializeTabReordering() {
+    const reorderButton = document.getElementById('reorderTabsButton');
+    if (!reorderButton) {
+        console.error('Reorder button not found!');
+        return;
+    }
+
+    const modal = document.getElementById('reorderModal');
+    if (!modal) {
+        console.error('Modal element not found!');
+        return;
+    }
+
+    const closeButton = modal.querySelector('.close');
+    const saveButton = document.getElementById('saveTabOrder');
+    const cancelButton = document.getElementById('cancelTabOrder');
+    const sortableList = document.getElementById('sortableTabs');
+
+    if (!closeButton || !saveButton || !cancelButton || !sortableList) {
+        console.error('One or more modal elements not found!');
+        return;
+    }
+
+    // Show modal when reorder button is clicked
+    reorderButton.addEventListener('click', () => {
+        // Get current tabs and populate sortable list
+        const tabs = document.querySelectorAll('.tab');
+        sortableList.innerHTML = '';
+
+        tabs.forEach(tab => {
+            const li = document.createElement('li');
+            li.className = 'sortable-item';
+            li.setAttribute('data-name', tab.textContent);
+
+            const handle = document.createElement('div');
+            handle.className = 'drag-handle';
+            handle.innerHTML = '<i class="fa-solid fa-grip-vertical"></i>';
+
+            const tabName = document.createElement('span');
+            tabName.textContent = tab.textContent;
+
+            li.appendChild(handle);
+            li.appendChild(tabName);
+            sortableList.appendChild(li);
+        });
+
+        modal.style.display = 'block';
+        // For the animation:
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+
+        makeSortable();
+    });
+
+    function hideModal() {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300); // Wait for animation to complete
+    }
+
+    // Close modal on close button click
+    closeButton.addEventListener('click', () => {
+        hideModal();
+    });
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            hideModal();
+        }
+    });
+
+    // Cancel button closes the modal without saving
+    cancelButton.addEventListener('click', () => {
+        hideModal();
+    });
+
+    // Save button saves the new order and applies it without reloading
+    saveButton.addEventListener('click', () => {
+        const newOrder = [];
+        sortableList.querySelectorAll('.sortable-item').forEach(item => {
+            newOrder.push(item.getAttribute('data-name'));
+        });
+
+        // Save the new order to localStorage
+        localStorage.setItem('tabOrder', JSON.stringify(newOrder));
+
+        // Hide modal immediately
+        hideModal();
+
+        // Show a success notification
+        const notification = document.createElement('div');
+        notification.className = 'notification';
+        notification.textContent = 'Tab order saved!';
+        document.body.appendChild(notification);
+
+        // Apply the new order without a reload
+        applyTabOrder(newOrder);
+
+        // Fade in notification
+        setTimeout(() => {
+            notification.classList.add('show');
+
+            // Remove notification after animation completes
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }, 10);
+    });
+}
+
+// Function to make the list sortable
+function makeSortable() {
+    const sortableList = document.getElementById('sortableTabs');
+    if (!sortableList) return;
+
+    let draggedItem = null;
+
+    const items = sortableList.querySelectorAll('.sortable-item');
+
+    items.forEach(item => {
+        const handle = item.querySelector('.drag-handle');
+        if (handle) {
+            handle.addEventListener('mousedown', function (e) {
+                draggedItem = item;
+                item.classList.add('dragging');
+
+                // Store initial mouse position
+                const initialY = e.clientY;
+                const initialRect = item.getBoundingClientRect();
+                const offsetY = initialY - initialRect.top;
+
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+
+                function onMouseMove(e) {
+                    if (!draggedItem) return;
+
+                    // Prevent default to avoid text selection
+                    e.preventDefault();
+
+                    // Update position of the dragged item
+                    draggedItem.style.position = 'absolute';
+                    draggedItem.style.top = `${e.clientY - offsetY}px`;
+                    draggedItem.style.width = `${initialRect.width}px`;
+                    draggedItem.style.zIndex = 1000;
+
+                    // Add a visual indicator of where the item will be placed
+                    const list = document.getElementById('sortableTabs');
+                    const listItems = Array.from(list.querySelectorAll('.sortable-item:not(.dragging)'));
+
+                    // Remove any existing placeholder
+                    const existingPlaceholder = list.querySelector('.drop-placeholder');
+                    if (existingPlaceholder) {
+                        existingPlaceholder.remove();
+                    }
+
+                    // Create and insert a placeholder
+                    const placeholder = document.createElement('li');
+                    placeholder.className = 'drop-placeholder';
+                    placeholder.style.height = '3px';  // Make it a bit more visible
+
+                    // Find the position to insert the placeholder
+                    const nextItem = listItems.find(item => {
+                        const box = item.getBoundingClientRect();
+                        return e.clientY < box.top + box.height / 2;
+                    });
+
+                    if (nextItem) {
+                        list.insertBefore(placeholder, nextItem);
+                    } else if (listItems.length > 0) {
+                        list.appendChild(placeholder);
+                    }
+                }
+
+                function onMouseUp() {
+                    if (draggedItem) {
+                        // Remove the placeholder
+                        const placeholder = document.querySelector('.drop-placeholder');
+                        if (placeholder) {
+                            // Insert the dragged item where the placeholder is
+                            if (placeholder.nextSibling) {
+                                sortableList.insertBefore(draggedItem, placeholder.nextSibling);
+                            } else {
+                                sortableList.appendChild(draggedItem);
+                            }
+                            placeholder.remove();
+                        }
+
+                        // Reset styles
+                        draggedItem.style.position = '';
+                        draggedItem.style.top = '';
+                        draggedItem.style.width = '';
+                        draggedItem.style.zIndex = '';
+                        draggedItem.classList.remove('dragging');
+                        draggedItem = null;
+                    }
+
+                    document.removeEventListener('mousemove', onMouseMove);
+                    document.removeEventListener('mouseup', onMouseUp);
+                }
+            });
+        }
+    });
+}
 
 function initializeTabsAndWebviews() {
     const tabs = document.querySelectorAll('.tab');
@@ -110,13 +412,18 @@ function initializeTabsAndWebviews() {
     };
 
     // Display the first webview container by default and load its URL
-    webviewContainers[0].style.display = 'block';
-    loadWebviewURL(webviewContainers[0]);
+    if (webviewContainers.length > 0) {
+        webviewContainers[0].style.display = 'block';
+        loadWebviewURL(webviewContainers[0]);
+    }
 
     // Add click event listeners to each tab
     tabs.forEach((tab, index) => {
         tab.addEventListener('click', () => {
-            document.querySelector('.tab.active').classList.remove('active');
+            const activeTab = document.querySelector('.tab.active');
+            if (activeTab) {
+                activeTab.classList.remove('active');
+            }
             tab.classList.add('active');
 
             webviewContainers.forEach((container, containerIndex) => {
@@ -129,7 +436,9 @@ function initializeTabsAndWebviews() {
             });
 
             // De-select the "Show All" checkbox
-            viewAllToggle.checked = false;
+            if (viewAllToggle) {
+                viewAllToggle.checked = false;
+            }
 
             // Resize the webview elements after switching tabs
             resizeWebviews();
@@ -143,59 +452,69 @@ function initializeTabsAndWebviews() {
         const backwardButton = container.querySelector('.backwardpage');
         const forwardButton = container.querySelector('.forwardpage');
 
-        // Add click event listener to the Home button
-        homeButton.addEventListener('click', () => {
-            const url = container.getAttribute('data-url');
-            webview.src = url;
-        });
-
-        // Add click event listener to the Backward button
-        backwardButton.addEventListener('click', () => {
-            if (webview.canGoBack()) {
-                webview.goBack();
-            }
-        });
-
-        // Add click event listener to the Forward button
-        forwardButton.addEventListener('click', () => {
-            if (webview.canGoForward()) {
-                webview.goForward();
-            }
-        });
-    });
-
-    // Handle the view toggle checkbox
-    viewAllToggle.addEventListener('change', () => {
-        if (viewAllToggle.checked) {
-            // Show all webviews side by side and load their URLs
-            content.style.display = 'flex';
-            content.style.flexDirection = 'row';
-            webviewContainers.forEach(container => {
-                container.style.display = 'flex';
-                container.style.width = '33.33%';
-                loadWebviewURL(container);
-            });
-        } else {
-            // Revert to tabbed view
-            content.style.display = 'flex';
-            content.style.flexDirection = 'column';
-            const activeTab = document.querySelector('.tab.active');
-            const activeIndex = Array.from(tabs).indexOf(activeTab);
-
-            webviewContainers.forEach((container, index) => {
-                if (index === activeIndex) {
-                    container.style.display = 'block';
-                    loadWebviewURL(container);
-                } else {
-                    container.style.display = 'none';
+        if (homeButton) {
+            // Add click event listener to the Home button
+            homeButton.addEventListener('click', () => {
+                const url = container.getAttribute('data-url');
+                if (webview && url) {
+                    webview.src = url;
                 }
-                container.style.width = '100%';
             });
         }
 
-        // Resize the webview elements after changing the view
-        resizeWebviews();
+        if (backwardButton && webview) {
+            // Add click event listener to the Backward button
+            backwardButton.addEventListener('click', () => {
+                if (webview.canGoBack()) {
+                    webview.goBack();
+                }
+            });
+        }
+
+        if (forwardButton && webview) {
+            // Add click event listener to the Forward button
+            forwardButton.addEventListener('click', () => {
+                if (webview.canGoForward()) {
+                    webview.goForward();
+                }
+            });
+        }
     });
+
+    // Handle the view toggle checkbox
+    if (viewAllToggle) {
+        viewAllToggle.addEventListener('change', () => {
+            if (viewAllToggle.checked) {
+                // Show all webviews side by side and load their URLs
+                content.style.display = 'flex';
+                content.style.flexDirection = 'row';
+                webviewContainers.forEach(container => {
+                    container.style.display = 'flex';
+                    container.style.width = '33.33%';
+                    loadWebviewURL(container);
+                });
+            } else {
+                // Revert to tabbed view
+                content.style.display = 'flex';
+                content.style.flexDirection = 'column';
+                const activeTab = document.querySelector('.tab.active');
+                const activeIndex = Array.from(tabs).indexOf(activeTab);
+
+                webviewContainers.forEach((container, index) => {
+                    if (index === activeIndex) {
+                        container.style.display = 'block';
+                        loadWebviewURL(container);
+                    } else {
+                        container.style.display = 'none';
+                    }
+                    container.style.width = '100%';
+                });
+            }
+
+            // Resize the webview elements after changing the view
+            resizeWebviews();
+        });
+    }
 
     // Initial resize of the webview elements
     resizeWebviews();

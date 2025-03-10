@@ -193,3 +193,174 @@ webview {
         #buttons button:hover {
             background-color: #0056b3;
         }
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+}
+
+.modal-content {
+    background-color: #495057; /* Darker background to match manage container */
+    margin: 10% auto;
+    padding: 20px;
+    border: none;
+    width: 50%;
+    max-width: 500px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    color: white; /* White text to match manage container */
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #6c757d;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+    .modal-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+        color: white; /* White text color */
+    }
+
+.close {
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #adb5bd; /* Lighter gray color */
+}
+
+    .close:hover {
+        color: white;
+    }
+
+.modal-body {
+    margin-bottom: 10px;
+}
+
+    .modal-body p {
+        color: #e9ecef; /* Light gray text */
+        margin-bottom: 15px;
+    }
+
+.modal-footer {
+    margin-top: 20px;
+    text-align: right;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+    .modal-footer button {
+        padding: 8px 15px;
+        cursor: pointer;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: white;
+        transition: background-color 0.3s ease;
+    }
+
+        .modal-footer button:hover {
+            background-color: #0056b3;
+        }
+
+/* Sortable list styles */
+.sortable-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+.sortable-item {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    margin-bottom: 8px;
+    background-color: #343a40; /* Darker background for tabs */
+    border: 1px solid #212529;
+    border-radius: 5px;
+    color: white;
+}
+
+    .sortable-item.dragging {
+        opacity: 0.7;
+        border: 1px dashed #007bff;
+        background-color: #212529;
+        box-shadow: 0 0 10px rgba(0, 123, 255, 0.3);
+    }
+
+.drag-handle {
+    margin-right: 15px;
+    cursor: grab;
+    color: #adb5bd; /* Light gray color */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .drag-handle:hover {
+        color: #007bff; /* Blue on hover */
+    }
+
+#reorderTabsButton {
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+    #reorderTabsButton:hover {
+        background-color: #0056b3;
+    }
+
+.drop-placeholder {
+    height: 2px;
+    background-color: #007bff;
+    margin: 5px 0;
+    transition: all 0.2s ease;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+}
+
+/* Style for the tabs inside the sortable list */
+.sortable-item span {
+    flex-grow: 1;
+}
+
+/* Notification for saving */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #28a745; /* Green success color */
+    color: white;
+    padding: 12px 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 2000;
+}
+
+    .notification.show {
+        transform: translateY(0);
+        opacity: 1;
+    }

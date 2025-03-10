@@ -15,10 +15,27 @@
             <label class="viewall-toggle-label">
                 <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
             </label>
+            <button id="reorderTabsButton"><i class="fa-solid fa-arrows-up-down-left-right"></i> Reorder</button>
         </div>
         <button id="configureButton">Configure AI Services</button>
     </div>
     <div id="content"></div>
+    <div id="reorderModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reorder Tabs</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Drag and drop to reorder your tabs:</p>
+                <ul id="sortableTabs" class="sortable-list"></ul>
+            </div>
+            <div class="modal-footer">
+                <button id="saveTabOrder">Save</button>
+                <button id="cancelTabOrder">Cancel</button>
+            </div>
+        </div>
+    </div>
     <script src="src/index.js"></script>
 </body>
 </html>
