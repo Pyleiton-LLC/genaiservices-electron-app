@@ -28,6 +28,12 @@ ipcMain.on('navigate', (event, page) => {
     }
 });
 
+ipcMain.on('reload-app', () => {
+    if (mainWindow) {
+        mainWindow.reload();
+    }
+});
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 800,
