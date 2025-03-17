@@ -121,7 +121,8 @@
       "icon": "resources/pyleiton-icon.ico",
       "compression": "maximum",
       "executableName": "genai-services",
-      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
+      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}",
+      "forceUpdateIcon": true
     },
     "mac": {
       "target": "dmg",
