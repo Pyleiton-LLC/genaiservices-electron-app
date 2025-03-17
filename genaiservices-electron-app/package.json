@@ -1,6 +1,6 @@
 {
   "name": "genaiservices-electron-app",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "description": "This app allows you to display multiple Gen AI services on different tabs or side by side for comparison",
   "main": "dist/app.bundle.js",
   "scripts": {
