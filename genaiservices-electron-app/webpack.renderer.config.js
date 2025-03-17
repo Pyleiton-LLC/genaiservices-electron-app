@@ -27,7 +27,7 @@ module.exports = {
         new CompressionPlugin({
             algorithm: 'gzip',
             test: /\.(js|css|html|json)$/,
-            threshold: 10240, // Only compress files larger than 10k
+            threshold: 5024, // Only compress files larger than 5k
         })
     ],
     resolve: {

@@ -1,3 +1,4 @@
+require('../styles.css');
 window.addEventListener('DOMContentLoaded', () => {
     let configData = null; // Store the config data globally
 
