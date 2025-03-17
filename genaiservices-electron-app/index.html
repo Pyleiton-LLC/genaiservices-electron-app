@@ -16,8 +16,8 @@
                 <input type="checkbox" id="viewAllToggle" class="viewall-toggle" /> Show All
             </label>
             <button id="reorderTabsButton"><i class="fa-solid fa-arrows-up-down-left-right"></i> Reorder</button>
+            <button id="manageAiServicesButton"><i class="fa-solid fa-gear"></i>Manage AI Services</button>
         </div>
-        <button id="configureButton">Configure AI Services</button>
     </div>
     <div id="content"></div>
     <div id="reorderModal" class="modal">
@@ -33,6 +33,23 @@
             <div class="modal-footer">
                 <button id="saveTabOrder">Save</button>
                 <button id="cancelTabOrder">Cancel</button>
+            </div>
+        </div>
+    </div>
+    <div id="manageAiServicesModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Manage AI Services</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p>Select which AI services to show:</p>
+                <form id="ai-services-form"></form>
+                <div id="error-message" style="color: #b22222; display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="saveServices">Save</button>
+                <button id="cancelServices">Cancel</button>
             </div>
         </div>
     </div>

@@ -115,7 +115,7 @@ button:active {
     margin-right: 5px;
 }
 
-#configureButton {
+#manageAiServicesButton {
     padding: 5px 10px;
     font-size: 14px;
     border: none;
@@ -125,13 +125,16 @@ button:active {
     cursor: pointer;
     transition: background-color 0.3s ease;
     margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
-    #configureButton:hover {
+    #manageAiServicesButton:hover {
         background-color: #0056b3;
     }
 
-    #configureButton:active {
+    #manageAiServicesButton:active {
         background-color: #004494;
     }
 
@@ -268,6 +271,7 @@ webview {
         background-color: #007bff;
         color: white;
         transition: background-color 0.3s ease;
+        font-size: 14px;
     }
 
         .modal-footer button:hover {
@@ -364,3 +368,7 @@ webview {
         transform: translateY(0);
         opacity: 1;
     }
+
+#controls button:not(:first-child) {
+    margin-left: 10px;
+}

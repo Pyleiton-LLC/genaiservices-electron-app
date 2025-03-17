@@ -1,5 +1,8 @@
 window.addEventListener('DOMContentLoaded', () => {
+    let configData = null; // Store the config data globally
+
     window.electron.ipcRenderer.on('config', (event, config) => {
+        configData = config; // Store the config for later use
 
         // Get selected services
         const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) || config.pages.map(service => service.name);
@@ -99,19 +102,248 @@ window.addEventListener('DOMContentLoaded', () => {
         // Only initialize reordering after everything else is done
         setTimeout(() => {
             initializeTabReordering();
+            initializeManageAiServicesModal();
         }, 500);
     });
 
-    // Add reorderTabsButton event listener only after DOM is fully loaded
+    // Add event listeners only after DOM is fully loaded
     window.addEventListener('load', () => {
-        const configureButton = document.getElementById('configureButton');
-        if (configureButton) {
-            configureButton.addEventListener('click', () => {
-                window.electron.ipcRenderer.send('navigate', 'manage-ai-services.html');
+        const manageAIiServicesButton = document.getElementById('manageAiServicesButton');
+        if (manageAIiServicesButton) {
+            manageAIiServicesButton.addEventListener('click', () => {
+                showManageAiServicesModal();
             });
         }
     });
+
+    // New function to show configure modal
+    function showManageAiServicesModal() {
+        if (!configData) return;
+
+        const modal = document.getElementById('manageAiServicesModal');
+        if (!modal) return;
+
+        const form = document.getElementById('ai-services-form');
+        const errorMessage = document.getElementById('error-message');
+
+        if (!form) return;
+
+        // Clear existing form content
+        form.innerHTML = '';
+        if (errorMessage) errorMessage.style.display = 'none';
+
+        // Get selected services
+        const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) ||
+            configData.pages.map(service => service.name);
+
+        // Generate checkboxes based on config
+        configData.pages.forEach(service => {
+            const label = document.createElement('label');
+            label.className = 'service-checkbox';
+            label.innerHTML = `
+                <input type="checkbox" name="services" value="${service.name}" 
+                    ${selectedServices.includes(service.name) ? 'checked' : ''}> 
+                ${service.name}
+            `;
+            form.appendChild(label);
+        });
+
+        // Show the modal
+        modal.style.display = 'block';
+        setTimeout(() => {
+            modal.classList.add('show');
+        }, 10);
+    }
+
+    function initializeManageAiServicesModal() {
+        const modal = document.getElementById('manageAiServicesModal');
+        if (!modal) return;
+
+        const closeButtons = modal.querySelectorAll('.close');
+        const saveButton = document.getElementById('saveServices');
+        const cancelButton = document.getElementById('cancelServices');
+
+        function hideModal() {
+            modal.classList.remove('show');
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300); // Wait for animation to complete
+        }
+
+        // Close modal buttons
+        closeButtons.forEach(button => {
+            button.addEventListener('click', hideModal);
+        });
+
+        // Close modal when clicking outside
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                hideModal();
+            }
+        });
+
+        // Cancel button just closes the modal
+        if (cancelButton) {
+            cancelButton.addEventListener('click', hideModal);
+        }
+
+        // Save button functionality
+        if (saveButton) {
+            saveButton.addEventListener('click', () => {
+                const checkboxes = document.querySelectorAll('input[name="services"]:checked');
+                const selectedServices = Array.from(checkboxes).map(checkbox => checkbox.value);
+                const errorMessage = document.getElementById('error-message');
+
+                if (selectedServices.length === 0) {
+                    if (errorMessage) {
+                        errorMessage.textContent = 'At least one service must be selected.';
+                        errorMessage.style.display = 'block';
+                    }
+                } else {
+                    // Save the selection to localStorage
+                    localStorage.setItem('selectedServices', JSON.stringify(selectedServices));
+
+                    // Hide modal
+                    hideModal();
+
+                    // Show success notification
+                    const notification = document.createElement('div');
+                    notification.className = 'notification';
+                    notification.textContent = 'AI services updated!';
+                    document.body.appendChild(notification);
+
+                    // Apply the new services configuration without reload
+                    if (configData) {
+                        applyServiceChanges(configData);
+                    }
+
+                    // Fade in notification
+                    setTimeout(() => {
+                        notification.classList.add('show');
+
+                        // Remove notification after animation completes
+                        setTimeout(() => {
+                            notification.classList.remove('show');
+                            setTimeout(() => notification.remove(), 300);
+                        }, 2000);
+                    }, 10);
+                }
+            });
+        }
+    }
 });
+
+// Function to apply service changes without reloading
+function applyServiceChanges(config) {
+    // Get the selected services from localStorage
+    const selectedServices = JSON.parse(localStorage.getItem('selectedServices')) ||
+        config.pages.map(service => service.name);
+
+    // Get custom tab order or create default
+    let tabOrder = JSON.parse(localStorage.getItem('tabOrder')) || selectedServices;
+
+    // Filter tabOrder to only include currently selected services
+    tabOrder = tabOrder.filter(tabName => selectedServices.includes(tabName));
+
+    // Add any new selected services that aren't in the order yet
+    selectedServices.forEach(service => {
+        if (!tabOrder.includes(service)) {
+            tabOrder.push(service);
+        }
+    });
+
+    // Save updated tab order
+    localStorage.setItem('tabOrder', JSON.stringify(tabOrder));
+
+    const tabsContainer = document.getElementById('tabs');
+    const contentContainer = document.getElementById('content');
+
+    // Record current active tab if possible
+    const activeTab = tabsContainer.querySelector('.tab.active');
+    const activeTabName = activeTab ? activeTab.textContent : null;
+
+    // Clear existing tabs and content
+    tabsContainer.innerHTML = '';
+    contentContainer.innerHTML = '';
+
+    // Create tabs and webview containers based on ordered tabs
+    const orderedPages = [];
+    tabOrder.forEach(tabName => {
+        const page = config.pages.find(p => p.name === tabName);
+        if (page) {
+            orderedPages.push(page);
+        }
+    });
+
+    // Create tabs and webview containers based on config
+    orderedPages.forEach((page, index) => {
+        // Set the first tab as active, or the previously active tab if it still exists
+        const isActive = (index === 0 && !activeTabName) ||
+            (activeTabName && page.name === activeTabName);
+
+        const tab = document.createElement('div');
+        tab.className = 'tab';
+        if (isActive) tab.classList.add('active');
+        tab.textContent = page.name;
+        tabsContainer.appendChild(tab);
+
+        const webviewContainer = document.createElement('div');
+        webviewContainer.className = 'webview-container';
+        webviewContainer.setAttribute('data-url', page.url);
+        if (!isActive) webviewContainer.style.display = 'none';
+
+        const controls = document.createElement('div');
+        controls.className = 'controls';
+        controls.innerHTML = `
+            <button class="homepage"><i class="fa-solid fa-house"></i></button>
+            <button class="backwardpage"><i class="fa-solid fa-backward"></i></button>
+            <button class="forwardpage"><i class="fa-solid fa-forward"></i></button>
+        `;
+        webviewContainer.appendChild(controls);
+
+        const webview = document.createElement('webview');
+        webview.setAttribute('allowpopups', 'true');
+        webview.setAttribute('preload', './webview-preload.js');
+
+        webview.src = page.url; // Ensure the webview has a src attribute
+        webviewContainer.appendChild(webview);
+
+        webview.addEventListener('ipc-message', (event) => {
+            if (event.channel === 'open-external' && event.args && event.args[0]) {
+                console.log('Opening external URL:', event.args[0]);
+                window.electron.shell.openExternal(event.args[0])
+                    .catch(err => console.error('Failed to open URL:', err));
+            }
+        });
+
+        contentContainer.appendChild(webviewContainer);
+
+        webview.addEventListener('new-window', (e) => {
+            e.preventDefault();
+
+            if (window.electron.shouldStayInWebview(e.url)) {
+                webview.src = e.url;
+            } else {
+                window.electron.shell.openExternal(e.url);
+            }
+        });
+
+        webview.addEventListener('will-navigate', (e) => {
+            if (!window.electron.shouldStayInWebview(e.url) && e.url !== webview.src) {
+                e.preventDefault();
+                window.electron.shell.openExternal(e.url);
+            }
+        });
+    });
+
+    // Initialize the tabs and webviews again
+    initializeTabsAndWebviews();
+
+    // Re-initialize the tab reordering functionality
+    setTimeout(() => {
+        initializeTabReordering();
+    }, 500);
+}
 
 // Function to apply tab order without reload
 function applyTabOrder(newOrder) {
