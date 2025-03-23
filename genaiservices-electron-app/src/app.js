@@ -101,7 +101,8 @@ function shouldStayInWebview(url) {
             { domain: 'openai.com', fullDomain: true },      // Matches all *.openai.com
             { domain: 'login.microsoftonline.com', fullDomain: false }, // Exact match only
             { domain: 'accounts.google.com', fullDomain: false },
-            { domain: 'perplexity.ai', fullDomain: true }    // Matches all *.perplexity.ai
+            { domain: 'perplexity.ai', fullDomain: true },
+            { domain: 'claude.ai', fullDomain: false }
         ];
 
         // Check if the hostname matches any allowed domains
