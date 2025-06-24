@@ -1,7 +1,7 @@
 {
-  "name": "genaiservices-electron-app",
-  "version": "0.5.2",
-  "description": "This app allows you to display multiple Gen AI services on different tabs or side by side for comparison",
+  "name": "pyleiton-genai-services-app",
+  "version": "1.0.0",
+  "description": "Display multiple Gen AI services on different tabs or side-by-side",
   "main": "dist/app.bundle.js",
   "scripts": {
     "start": "electron .",
@@ -111,8 +111,8 @@
     "yocto-queue": "^1.1.1"
   },
   "build": {
-    "appId": "com.example.genaiservices.electron.app",
-    "productName": "Gen AI Services",
+    "appId": "com.pyleiton.genai.services.app",
+    "productName": "Pyleiton Generative AI Services",
     "directories": {
       "output": "dist/prod"
     },
@@ -120,14 +120,14 @@
       "target": "nsis",
       "icon": "resources/pyleiton-icon.ico",
       "compression": "maximum",
-      "executableName": "genai-services",
-      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
+      "executableName": "pyleiton-genai-services",
+      "artifactName": "pyleiton-genai-services-${version}-${os}-${arch}.${ext}"
     },
     "mac": {
       "target": "dmg",
       "icon": "resources/pyleiton-icon.icns",
       "category": "public.app-category.utilities",
-      "artifactName": "genai-services-${version}-${os}-${arch}.${ext}"
+      "artifactName": "pyleiton-genai-services-${version}-${os}-${arch}.${ext}"
     },
     "dmg": {
       "icon": "resources/pyleiton-icon.icns",
