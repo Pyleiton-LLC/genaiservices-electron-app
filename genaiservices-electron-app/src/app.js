@@ -94,11 +94,13 @@ function shouldStayInWebview(url) {
         // Check if URL is a login page or belongs to a specific domain
         const urlObj = new URL(url);
         const hostname = urlObj.hostname;
+        console.log('Checking URL:', url, 'Hostname:', hostname);
 
         // List of domains that should be allowed in the webview
         // Use arrays where [0] is the domain and [1] is whether to match the whole domain
         const allowedDomains = [
             { domain: 'openai.com', fullDomain: true },      // Matches all *.openai.com
+            { domain: 'chatgpt.com', fullDomain: true },      // Matches all *.chatgpt.com
             { domain: 'login.microsoftonline.com', fullDomain: false }, // Exact match only
             { domain: 'accounts.google.com', fullDomain: false },
             { domain: 'perplexity.ai', fullDomain: true },
