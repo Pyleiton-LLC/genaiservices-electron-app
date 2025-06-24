@@ -25,11 +25,9 @@ contextBridge.exposeInMainWorld('electron', {
             // List of domains with wildcard options
             const allowedDomains = [
                 { domain: 'openai.com', fullDomain: true },      // Matches all *.openai.com
-                { domain: 'chatgpt.com', fullDomain: true },      // Matches all *.chatgpt.com
                 { domain: 'login.microsoftonline.com', fullDomain: false }, // Exact match only
-                { domain: 'accounts.google.com', fullDomain: false }, //Exact match only
-                { domain: 'perplexity.ai', fullDomain: true },    // Matches all *.perplexity.ai
-                { domain: 'claude.ai', fullDomain: false }
+                { domain: 'accounts.google.com', fullDomain: false },
+                { domain: 'perplexity.ai', fullDomain: true }    // Matches all *.perplexity.ai
             ];
 
             // Check if the hostname matches any allowed domains

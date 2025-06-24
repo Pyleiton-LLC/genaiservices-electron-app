@@ -13,7 +13,7 @@
     "build-mac": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder -m",
     "build-win": "npm run clean && npm run build-main && npm run build-renderer && npm prune && electron-builder -w",
     "build-unpacked": "npm run clean && npm run build-main && npm run build-renderer && electron-builder --dir",
-    "build-dev": "npm run clean && npm run build-main && npm run build-renderer"
+    "build-dev": "npm run clean && npm run build-main && npm run build-renderer && electron-builder"
   },
   "keywords": [],
   "author": "",
