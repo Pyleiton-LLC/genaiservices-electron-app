@@ -54,16 +54,41 @@ jobs:
         env:
           CERTIFICATE_PASSWORD: ${{ secrets.WIN_CERT_PASSWORD }}
         run: |
+          $sdkPath = "C:\Program Files (x86)\Windows Kits\10\bin"
+          $latestSdk = Get-ChildItem -Path $sdkPath -Directory | 
+            Where-Object { $_.Name -match '^\d+\.\d+\.\d+\.\d+$' } | 
+            Sort-Object Name -Descending | 
+            Select-Object -First 1
+          
+          if ($null -eq $latestSdk) {
+            Write-Error "No Windows SDK found in $sdkPath"
+            exit 1
+          }
+
+          # Try x64 first, then fall back to x86
+          $signtoolPath = Join-Path $latestSdk.FullName "x64\signtool.exe"
+          if (-not (Test-Path $signtoolPath)) {
+              $signtoolPath = Join-Path $latestSdk.FullName "x86\signtool.exe"
+          }
+
+          if (-not (Test-Path $signtoolPath)) {
+            Write-Error "signtool.exe not found in SDK version $($latestSdk.Name)"
+            exit 1
+          }
+
+          Write-Host "Using signtool from SDK version: $($latestSdk.Name)"
+          Write-Host "Path: $signtoolPath"
+          
           $certPath = $env:CERT_PATH
           $installers = Get-ChildItem -Path "genaiservices-electron-app\dist\prod" -Filter "*.exe" -Recurse
           
           foreach ($installer in $installers) {
             Write-Host "Signing $($installer.FullName)"
-            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86\signtool.exe" sign /f $certPath /p $env:CERTIFICATE_PASSWORD /tr http://timestamp.sectigo.com /td sha256 /fd sha256 $installer.FullName
+            & $signtoolPath sign /f $certPath /p $env:CERTIFICATE_PASSWORD /tr http://timestamp.sectigo.com /td sha256 /fd sha256 $installer.FullName
       
             # Verify signature but don't fail on error
             Write-Host "Verifying signature for $($installer.FullName)"
-            & "C:\Program Files (x86)\Windows Kits\10\bin\10.0.17763.0\x86\signtool.exe" verify /pa $installer.FullName
+            & $signtoolPath verify /pa $installer.FullName
             Write-Host "Verification complete - continuing regardless of result"
           }
           # Force a successful exit code to ensure GitHub Actions marks this step as successful
