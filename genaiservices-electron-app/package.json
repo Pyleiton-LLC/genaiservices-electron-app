@@ -1,6 +1,6 @@
 {
   "name": "pyleiton-genai-services-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Display multiple Gen AI services on different tabs or side-by-side",
   "main": "dist/app.bundle.js",
   "scripts": {
